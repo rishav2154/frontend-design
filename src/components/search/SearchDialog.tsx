@@ -1,27 +1,37 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search, X, ArrowRight, Sparkles } from 'lucide-react';
-import { products, categories } from '@/data/products';
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Search, X, ArrowRight, Sparkles } from "lucide-react";
+import { useProducts } from "@/hooks/useProducts";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+/* ✅ Categories aligned with DATABASE */
+const categories = [
+  { id: "magic-cup", name: "Mugs", icon: "☕", description: "Custom printed mugs" },
+  { id: "photo-frame", name: "Frames", icon: "🖼️", description: "Personalized frames" },
+  { id: "phone-cover", name: "Phone Cases", icon: "📱", description: "Customized phone covers" },
+  { id: "keychain", name: "Keychains", icon: "🔑", description: "Custom keychains" },
+  { id: "night-lamp", name: "Lamps", icon: "💡", description: "LED night lamps" },
+  { id: "custom", name: "Custom", icon: "✨", description: "Customizable products" },
+];
+
 export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
+  const { data: products = [], isLoading } = useProducts();
+
   useEffect(() => {
-    if (!open) {
-      setQuery('');
-    }
+    if (!open) setQuery("");
   }, [open]);
 
   const searchResults = useMemo(() => {
@@ -29,12 +39,15 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
 
     const lowerQuery = query.toLowerCase();
 
-    const matchedProducts = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(lowerQuery) ||
-        product.description.toLowerCase().includes(lowerQuery) ||
-        product.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
-    ).slice(0, 5);
+    const matchedProducts = products
+      .filter((product) =>
+        product.name?.toLowerCase().includes(lowerQuery) ||
+        product.description?.toLowerCase().includes(lowerQuery) ||
+        product.tags?.some((tag) =>
+          tag.toLowerCase().includes(lowerQuery)
+        )
+      )
+      .slice(0, 5);
 
     const matchedCategories = categories.filter(
       (category) =>
@@ -43,7 +56,7 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     );
 
     return { products: matchedProducts, categories: matchedCategories };
-  }, [query]);
+  }, [query, products]);
 
   const handleProductClick = (productId: string) => {
     onOpenChange(false);
@@ -55,13 +68,18 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     navigate(`/shop?category=${categoryId}`);
   };
 
-  const hasResults = searchResults.products.length > 0 || searchResults.categories.length > 0;
+  const hasResults =
+    searchResults.products.length > 0 ||
+    searchResults.categories.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
+      <DialogContent
+        className="sm:max-w-2xl p-0 gap-0 overflow-hidden"
+        aria-describedby={undefined}
+      >
         <DialogTitle className="sr-only">Search Products</DialogTitle>
-        
+
         {/* Search Input */}
         <div className="flex items-center gap-3 p-4 border-b border-border">
           <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
@@ -75,7 +93,7 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
           />
           {query && (
             <button
-              onClick={() => setQuery('')}
+              onClick={() => setQuery("")}
               className="p-1 rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-4 h-4" />
@@ -93,19 +111,14 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               className="text-center py-12"
             >
               <Search className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Start typing to search...</p>
-              <div className="flex flex-wrap justify-center gap-2 mt-6">
-                {['T-Shirts', 'Mugs', 'Frames', 'Gift Combos'].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setQuery(suggestion)}
-                    className="px-3 py-1.5 text-sm rounded-full bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+              <p className="text-muted-foreground">
+                Start typing to search...
+              </p>
             </motion.div>
+          ) : isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">
+              Loading...
+            </div>
           ) : !hasResults ? (
             <motion.div
               key="no-results"
@@ -119,7 +132,7 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               <button
                 onClick={() => {
                   onOpenChange(false);
-                  navigate('/shop');
+                  navigate("/shop");
                 }}
                 className="mt-4 text-accent hover:underline inline-flex items-center gap-1"
               >
@@ -144,12 +157,18 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                     {searchResults.categories.map((category) => (
                       <button
                         key={category.id}
-                        onClick={() => handleCategoryClick(category.id)}
+                        onClick={() =>
+                          handleCategoryClick(category.id)
+                        }
                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
-                        <span className="text-2xl">{category.icon}</span>
+                        <span className="text-2xl">
+                          {category.icon}
+                        </span>
                         <div className="flex-1">
-                          <p className="font-medium">{category.name}</p>
+                          <p className="font-medium">
+                            {category.name}
+                          </p>
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {category.description}
                           </p>
@@ -171,27 +190,39 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                     {searchResults.products.map((product) => (
                       <button
                         key={product.id}
-                        onClick={() => handleProductClick(product.id)}
+                        onClick={() =>
+                          handleProductClick(product.id)
+                        }
                         className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
+                        {/* Image */}
                         <img
-                          src={product.images[0]}
+                          src={product.images?.[0] || "/placeholder.svg"}
                           alt={product.name}
                           className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                         />
+
+                        {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium line-clamp-1">{product.name}</p>
+                            <h4 className="font-semibold text-base line-clamp-1">
+                              {product.name || "Unnamed Product"}
+                            </h4>
                             {product.isCustomizable && (
                               <Sparkles className="w-3 h-3 text-accent flex-shrink-0" />
                             )}
                           </div>
+
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {product.description}
                           </p>
                         </div>
+
+                        {/* Price */}
                         <div className="text-right flex-shrink-0">
-                          <p className="font-bold">₹{product.price.toFixed(2)}</p>
+                          <p className="font-bold text-base">
+                            ₹{product.price.toFixed(2)}
+                          </p>
                           {product.originalPrice && (
                             <p className="text-xs text-muted-foreground line-through">
                               ₹{product.originalPrice.toFixed(2)}
@@ -208,7 +239,9 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               <button
                 onClick={() => {
                   onOpenChange(false);
-                  navigate(`/shop?search=${encodeURIComponent(query)}`);
+                  navigate(
+                    `/shop?search=${encodeURIComponent(query)}`
+                  );
                 }}
                 className="w-full py-3 text-center text-accent hover:underline flex items-center justify-center gap-2"
               >

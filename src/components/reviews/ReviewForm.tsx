@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Star, Send } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+// ReviewForm.tsx - Updated with black text, validation, better UX
+import axios from 'axios';
+import { useState, useCallback } from 'react';
+import { Star } from 'lucide-react';
+
+const API = 'http://localhost:5000/api';
 
 interface ReviewFormProps {
   productId: string;
@@ -10,138 +11,84 @@ interface ReviewFormProps {
 }
 
 export const ReviewForm = ({ productId, onReviewSubmitted }: ReviewFormProps) => {
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const token = localStorage.getItem('token');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (rating === 0) {
-      toast.error('Please select a rating');
+  const submit = useCallback(async () => {
+    if (!comment.trim()) {
+      setError('Review content is required');
+      return;
+    }
+    if (comment.trim().length < 10) {
+      setError('Review must be at least 10 characters');
       return;
     }
 
-    if (content.trim().length < 10) {
-      toast.error('Review must be at least 10 characters');
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    setSubmitting(true);
+    setError('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        toast.error('Please sign in to submit a review');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const { error } = await supabase.from('reviews').insert({
-        product_id: productId,
-        user_id: user.id,
-        user_name: profile?.full_name || user.email?.split('@')[0] || 'Anonymous',
-        rating,
-        title: title.trim() || null,
-        content: content.trim(),
-      });
-
-      if (error) throw error;
-
-      toast.success('Review submitted successfully!');
-      setRating(0);
-      setTitle('');
-      setContent('');
+      await axios.post(
+        `${API}/products/${productId}/reviews`,
+        { rating, comment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       onReviewSubmitted();
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast.error('Failed to submit review. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to submit review');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
-  };
+  }, [productId, rating, comment, token, onReviewSubmitted]);
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 glass-card rounded-2xl space-y-4">
-      <h3 className="text-lg font-semibold">Write a Review</h3>
-
-      {/* Star Rating */}
-      <div>
-        <label className="text-sm text-muted-foreground mb-2 block">
-          Your Rating
-        </label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
+    <div className="glass-card p-6 rounded-xl">
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Rating</label>
+        <div className="flex gap-1 justify-center">
+          {[5, 4, 3, 2, 1].map((star) => (
+            <Star
               key={star}
-              type="button"
-              onMouseEnter={() => setHoverRating(star)}
-              onMouseLeave={() => setHoverRating(0)}
+              className={`w-8 h-8 cursor-pointer transition-colors ${
+                rating >= star
+                  ? 'fill-accent text-accent'
+                  : 'text-muted hover:text-accent'
+              }`}
               onClick={() => setRating(star)}
-              className="p-1 transition-transform hover:scale-110"
-            >
-              <Star
-                className={`w-6 h-6 ${
-                  star <= (hoverRating || rating)
-                    ? 'fill-accent text-accent'
-                    : 'text-muted'
-                }`}
-              />
-            </button>
+            />
           ))}
         </div>
+        <p className="text-sm text-muted-foreground mt-1">Rating: {rating}/5</p>
       </div>
 
-      {/* Title */}
-      <div>
-        <label className="text-sm text-muted-foreground mb-2 block">
-          Review Title (optional)
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Summarize your experience"
-          className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-accent focus:outline-none transition-colors"
-          maxLength={100}
-        />
-      </div>
+      <textarea
+        className={`w-full border rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-200 resize-vertical min-h-[120px] ${
+          comment
+            ? 'text-foreground bg-background/80 border-foreground/30'
+            : 'text-muted-foreground bg-background/50 border-muted'
+        }`}
+        value={comment}
+        onChange={(e) => {
+          setComment(e.target.value);
+          if (error) setError('');
+        }}
+        placeholder="Write your review here..."
+        disabled={submitting}
+      />
+      
+      {error && (
+        <p className="text-red-500 text-sm mt-2">{error}</p>
+      )}
 
-      {/* Content */}
-      <div>
-        <label className="text-sm text-muted-foreground mb-2 block">
-          Your Review
-        </label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Share your experience with this product..."
-          rows={4}
-          className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-accent focus:outline-none transition-colors resize-none"
-          maxLength={1000}
-        />
-        <span className="text-xs text-muted-foreground">{content.length}/1000</span>
-      </div>
-
-      {/* Submit */}
-      <motion.button
-        type="submit"
-        disabled={isSubmitting}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full btn-luxury flex items-center justify-center gap-2 disabled:opacity-50"
+      <button 
+        onClick={submit} 
+        disabled={submitting || !comment.trim()}
+        className="btn-luxury w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Send className="w-4 h-4" />
-        {isSubmitting ? 'Submitting...' : 'Submit Review'}
-      </motion.button>
-    </form>
+        {submitting ? 'Submitting...' : 'Submit Review'}
+      </button>
+    </div>
   );
 };

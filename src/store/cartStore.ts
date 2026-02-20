@@ -22,10 +22,12 @@ export interface CartItem {
 }
 
 export interface AppliedCoupon {
+  discount: any;
   code: string;
   discountType: "percentage" | "fixed" | "free_shipping";
   discountValue: number;
   maxDiscount?: number;
+  description?: string;
 }
 
 interface CartStore {

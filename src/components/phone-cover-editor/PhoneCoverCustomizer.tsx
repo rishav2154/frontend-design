@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Smartphone, Upload, ShoppingBag, Check, X, 
-  Search, ChevronDown, Sparkles, FileText 
+import {
+  Smartphone, Upload, ShoppingBag, Check, X,
+  Search, ChevronDown, Sparkles, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,201 +12,175 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartStore } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
 
-// Phone brands and models
-const PHONE_BRANDS = [
-  {
-    name: 'Apple',
-    models: [
-      'iPhone 16 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Plus', 'iPhone 16',
-      'iPhone 15 Pro Max', 'iPhone 15 Pro', 'iPhone 15 Plus', 'iPhone 15',
-      'iPhone 14 Pro Max', 'iPhone 14 Pro', 'iPhone 14 Plus', 'iPhone 14',
-      'iPhone 13 Pro Max', 'iPhone 13 Pro', 'iPhone 13', 'iPhone 13 Mini',
-      'iPhone 12 Pro Max', 'iPhone 12 Pro', 'iPhone 12', 'iPhone 12 Mini',
-      'iPhone 11 Pro Max', 'iPhone 11 Pro', 'iPhone 11',
-      'iPhone SE (2022)', 'iPhone SE (2020)'
-    ]
-  },
-  {
-    name: 'Samsung',
-    models: [
-      'Galaxy S24 Ultra', 'Galaxy S24+', 'Galaxy S24',
-      'Galaxy S23 Ultra', 'Galaxy S23+', 'Galaxy S23', 'Galaxy S23 FE',
-      'Galaxy S22 Ultra', 'Galaxy S22+', 'Galaxy S22',
-      'Galaxy Z Fold 5', 'Galaxy Z Fold 4', 'Galaxy Z Flip 5', 'Galaxy Z Flip 4',
-      'Galaxy A54 5G', 'Galaxy A34 5G', 'Galaxy A24', 'Galaxy A14 5G',
-      'Galaxy M54 5G', 'Galaxy M34 5G', 'Galaxy F54 5G'
-    ]
-  },
-  {
-    name: 'OnePlus',
-    models: [
-      'OnePlus 12', 'OnePlus 12R', 'OnePlus Open',
-      'OnePlus 11', 'OnePlus 11R',
-      'OnePlus 10 Pro', 'OnePlus 10T', 'OnePlus 10R',
-      'OnePlus Nord 3', 'OnePlus Nord CE 3', 'OnePlus Nord CE 3 Lite',
-      'OnePlus Nord N30', 'OnePlus Nord N20'
-    ]
-  },
-  {
-    name: 'Google',
-    models: [
-      'Pixel 9 Pro XL', 'Pixel 9 Pro', 'Pixel 9', 'Pixel 9 Pro Fold',
-      'Pixel 8 Pro', 'Pixel 8', 'Pixel 8a',
-      'Pixel 7 Pro', 'Pixel 7', 'Pixel 7a',
-      'Pixel 6 Pro', 'Pixel 6', 'Pixel 6a'
-    ]
-  },
-  {
-    name: 'Xiaomi',
-    models: [
-      'Xiaomi 14 Ultra', 'Xiaomi 14 Pro', 'Xiaomi 14',
-      'Xiaomi 13 Ultra', 'Xiaomi 13 Pro', 'Xiaomi 13',
-      'Redmi Note 13 Pro+', 'Redmi Note 13 Pro', 'Redmi Note 13',
-      'Redmi Note 12 Pro+', 'Redmi Note 12 Pro', 'Redmi Note 12',
-      'Poco F5 Pro', 'Poco F5', 'Poco X5 Pro', 'Poco X5'
-    ]
-  },
-  {
-    name: 'Vivo',
-    models: [
-      'Vivo X100 Pro', 'Vivo X100',
-      'Vivo X90 Pro', 'Vivo X90',
-      'Vivo V30 Pro', 'Vivo V30', 'Vivo V29 Pro', 'Vivo V29',
-      'Vivo Y100', 'Vivo Y78+', 'Vivo Y56'
-    ]
-  },
-  {
-    name: 'Oppo',
-    models: [
-      'Oppo Find X7 Ultra', 'Oppo Find X7',
-      'Oppo Find N3', 'Oppo Find N3 Flip',
-      'Oppo Reno 11 Pro', 'Oppo Reno 11', 'Oppo Reno 10 Pro+', 'Oppo Reno 10',
-      'Oppo A79', 'Oppo A78', 'Oppo A58'
-    ]
-  },
-  {
-    name: 'Realme',
-    models: [
-      'Realme GT 5 Pro', 'Realme GT 5',
-      'Realme GT Neo 5', 'Realme GT Neo 5 SE',
-      'Realme 12 Pro+', 'Realme 12 Pro', 'Realme 12',
-      'Realme Narzo 60 Pro', 'Realme Narzo 60', 'Realme C55'
-    ]
-  },
-  {
-    name: 'Nothing',
-    models: [
-      'Nothing Phone (2a)', 'Nothing Phone (2)', 'Nothing Phone (1)'
-    ]
-  },
-  {
-    name: 'Motorola',
-    models: [
-      'Motorola Edge 50 Pro', 'Motorola Edge 50', 'Motorola Edge 40 Pro', 'Motorola Edge 40',
-      'Motorola Razr 40 Ultra', 'Motorola Razr 40',
-      'Moto G84', 'Moto G54', 'Moto G34'
-    ]
-  }
-];
-
-const COVER_TYPES = [
-  { id: 'hard', name: 'Hard Plastic Case', description: 'Durable and lightweight protection', price: 299 },
-  { id: 'soft', name: 'Soft Silicone Case', description: 'Flexible grip with shock absorption', price: 249 },
-  { id: 'leather', name: 'Leather Finish Case', description: 'Premium leather texture look', price: 449 },
-  { id: 'clear', name: 'Clear Transparent Case', description: 'Show off your design with crystal clarity', price: 349 },
-  { id: 'matte', name: 'Matte Finish Case', description: 'Anti-fingerprint with smooth texture', price: 349 },
-  { id: 'rugged', name: 'Rugged Armor Case', description: 'Military-grade drop protection', price: 549 },
-];
-
 export function PhoneCoverCustomizer() {
+
+  const API = "http://localhost:5000/api";
+
+  const [uploading, setUploading] = useState(false);
+
+  // 🔥 Dynamic Data
+  const [brands, setBrands] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
+  const [coverTypes, setCoverTypes] = useState<any[]>([]);
+
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedCoverType, setSelectedCoverType] = useState<string>('hard');
+  const [selectedCoverType, setSelectedCoverType] = useState<string>('');
+
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+
   const [brandSearch, setBrandSearch] = useState('');
   const [modelSearch, setModelSearch] = useState('');
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
   const { toast } = useToast();
 
-  const selectedBrandData = PHONE_BRANDS.find(b => b.name === selectedBrand);
-  const selectedCoverData = COVER_TYPES.find(c => c.id === selectedCoverType);
-  
-  const filteredBrands = PHONE_BRANDS.filter(b => 
+  // ============================
+  // 🔥 LOAD BRANDS
+  // ============================
+  useEffect(() => {
+    fetch(`${API}/brands`)
+      .then(res => res.json())
+      .then(data => setBrands(data))
+      .catch(() => toast({ title: "Failed to load brands", variant: "destructive" }));
+  }, []);
+
+  // ============================
+  // 🔥 LOAD MODELS
+  // ============================
+  useEffect(() => {
+    if (!selectedBrand) return;
+
+    fetch(`${API}/models/${selectedBrand}`)
+      .then(res => res.json())
+      .then(data => {
+        setModels(data);
+        setSelectedModel('');
+        setSelectedCoverType('');
+      });
+  }, [selectedBrand]);
+
+  // ============================
+  // 🔥 LOAD COVER TYPES
+  // ============================
+  useEffect(() => {
+    if (!selectedModel) return;
+
+    fetch(`${API}/cover-types/${selectedModel}`)
+      .then(res => res.json())
+      .then(data => {
+        setCoverTypes(data);
+        setSelectedCoverType('');
+      });
+  }, [selectedModel]);
+
+  const selectedBrandData = brands.find(b => b.id === selectedBrand);
+  const selectedModelData = models.find(m => m.id === selectedModel);
+  const selectedCoverData = coverTypes.find(c => c.id === selectedCoverType);
+
+  const filteredBrands = brands.filter(b =>
     b.name.toLowerCase().includes(brandSearch.toLowerCase())
   );
-  
-  const filteredModels = selectedBrandData?.models.filter(m => 
-    m.toLowerCase().includes(modelSearch.toLowerCase())
-  ) || [];
 
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const filteredModels = models.filter(m =>
+    m.name.toLowerCase().includes(modelSearch.toLowerCase())
+  );
+
+  // ============================
+  // IMAGE UPLOAD
+  // ============================
+  const handleImageUpload = useCallback(async (e: any) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please upload an image under 10MB",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image under 10MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(`${API}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      setUploadedImage(data.imageUrl);
+
+      toast({
+        title: "Image uploaded successfully",
+        description: "Your design is ready!"
+      });
+
+    } catch (err: any) {
+      toast({
+        title: "Upload failed",
+        description: err.message || "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
     }
   }, [toast]);
 
   const removeImage = () => {
     setUploadedImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleAddToCart = () => {
-    if (!selectedBrand || !selectedModel) {
+    if (!selectedBrand || !selectedModel || !selectedCoverType) {
       toast({
-        title: "Select Phone Model",
-        description: "Please select your phone brand and model",
+        title: "Select Complete Details",
+        description: "Please select brand, model and cover type",
         variant: "destructive"
       });
       return;
     }
-    
+
     if (!uploadedImage) {
       toast({
         title: "Upload Image",
-        description: "Please upload an image to print on your cover",
+        description: "Please upload an image",
         variant: "destructive"
       });
       return;
     }
 
-   addItem({
-  productId: `custom-phone-cover-${Date.now()}`,
-  name: `Custom ${selectedModel} ${selectedCoverData?.name}`,
-  price: Number(selectedCoverData?.price || 299),
-  quantity: 1,
-  image: uploadedImage,
-  customization: {
-    brand: selectedBrand,
-    model: selectedModel,
-    coverType: selectedCoverType,
-    designUrl: uploadedImage,
-    specialInstructions: specialInstructions.trim() || undefined
-  }
-});
+    const customText = `Custom Phone Cover: ${selectedBrandData?.name} ${selectedModelData?.name}, ${selectedCoverData?.name}`;
 
+    addItem({
+      productId: "customize-phone-cover",
+      name: "Custom Phone Cover",
+      price: Number(selectedCoverData?.price || 0),
+      quantity: 1,
+      image: uploadedImage,
+      customization: {
+        text: customText,
+        imageUrl: uploadedImage,
+        color: selectedCoverType,
+      },
+    });
 
     setShowSuccess(true);
     setTimeout(() => {
@@ -215,7 +189,7 @@ export function PhoneCoverCustomizer() {
     }, 1500);
   };
 
-  const isComplete = selectedBrand && selectedModel && uploadedImage;
+  const isComplete = selectedBrand && selectedModel && selectedCoverType && uploadedImage;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -231,14 +205,14 @@ export function PhoneCoverCustomizer() {
               <Smartphone className="w-5 h-5 text-accent" />
               Cover Preview
             </h3>
-            
+
             {/* Phone Cover Preview */}
             <div className="aspect-[3/4] bg-gradient-to-br from-muted to-muted/50 rounded-3xl overflow-hidden relative flex items-center justify-center">
               {uploadedImage ? (
                 <div className="w-full h-full relative">
-                  <img 
-                    src={uploadedImage} 
-                    alt="Cover design" 
+                  <img
+                    src={uploadedImage}
+                    alt="Cover design"
                     className="w-full h-full object-cover"
                   />
                   {/* Phone frame overlay */}
@@ -259,13 +233,15 @@ export function PhoneCoverCustomizer() {
                 {selectedBrand && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Brand:</span>
-                    <span className="font-medium">{selectedBrand}</span>
+                 <span className="font-medium">{selectedBrandData?.name}</span>
+
                   </div>
                 )}
                 {selectedModel && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Model:</span>
-                    <span className="font-medium">{selectedModel}</span>
+                  <span className="font-medium">{selectedModelData?.name}</span>
+
                   </div>
                 )}
                 {selectedCoverData && (
@@ -283,7 +259,7 @@ export function PhoneCoverCustomizer() {
                 <span className="text-muted-foreground">Total Price</span>
                 <span className="text-3xl font-bold">₹{selectedCoverData?.price || 299}</span>
               </div>
-              
+
               <Button
                 onClick={handleAddToCart}
                 disabled={!isComplete}
@@ -317,7 +293,7 @@ export function PhoneCoverCustomizer() {
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">1</div>
               <h3 className="font-semibold">Select Phone Brand</h3>
             </div>
-            
+
             <div className="relative">
               <button
                 onClick={() => {
@@ -327,11 +303,12 @@ export function PhoneCoverCustomizer() {
                 className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 border border-border rounded-xl hover:border-accent transition-colors"
               >
                 <span className={selectedBrand ? 'text-foreground' : 'text-muted-foreground'}>
-                  {selectedBrand || 'Choose brand...'}
+                  {selectedBrandData?.name || 'Choose brand...'}
+
                 </span>
                 <ChevronDown className={`w-5 h-5 transition-transform ${showBrandDropdown ? 'rotate-180' : ''}`} />
               </button>
-              
+
               <AnimatePresence>
                 {showBrandDropdown && (
                   <motion.div
@@ -339,8 +316,8 @@ export function PhoneCoverCustomizer() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute w-full mt-2 rounded-xl shadow-2xl overflow-hidden border border-border"
-                    style={{ 
-                      zIndex: 9999, 
+                    style={{
+                      zIndex: 9999,
                       isolation: 'isolate',
                       backgroundColor: 'hsl(240 10% 8%)',
                       backdropFilter: 'none'
@@ -360,19 +337,18 @@ export function PhoneCoverCustomizer() {
                     <div className="max-h-60 overflow-y-auto" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
                       {filteredBrands.map((brand) => (
                         <button
-                          key={brand.name}
+                          key={brand.id}
                           onClick={() => {
-                            setSelectedBrand(brand.name);
+                            setSelectedBrand(brand.id);
                             setSelectedModel('');
                             setShowBrandDropdown(false);
                             setBrandSearch('');
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center justify-between text-foreground ${
-                            selectedBrand === brand.name ? 'bg-accent/10 text-accent' : ''
-                          }`}
+                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center justify-between text-foreground ${selectedBrand === brand.id ? 'bg-accent/10 text-accent' : ''
+                            }`}
                         >
                           <span>{brand.name}</span>
-                          <span className="text-xs text-muted-foreground">{brand.models.length} models</span>
+                          <span className="text-xs text-muted-foreground">Brand</span>
                         </button>
                       ))}
                     </div>
@@ -388,7 +364,7 @@ export function PhoneCoverCustomizer() {
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">2</div>
               <h3 className="font-semibold">Select Phone Model</h3>
             </div>
-            
+
             <div className="relative">
               <button
                 onClick={() => {
@@ -398,11 +374,12 @@ export function PhoneCoverCustomizer() {
                 className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 border border-border rounded-xl hover:border-accent transition-colors"
               >
                 <span className={selectedModel ? 'text-foreground' : 'text-muted-foreground'}>
-                  {selectedModel || 'Choose model...'}
+                  {selectedModelData?.name || 'Choose model...'}
+
                 </span>
                 <ChevronDown className={`w-5 h-5 transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
               </button>
-              
+
               <AnimatePresence>
                 {showModelDropdown && selectedBrandData && (
                   <motion.div
@@ -410,8 +387,8 @@ export function PhoneCoverCustomizer() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute w-full mt-2 rounded-xl shadow-2xl overflow-hidden border border-border"
-                    style={{ 
-                      zIndex: 9999, 
+                    style={{
+                      zIndex: 9999,
                       isolation: 'isolate',
                       backgroundColor: 'hsl(240 10% 8%)',
                       backdropFilter: 'none'
@@ -431,19 +408,19 @@ export function PhoneCoverCustomizer() {
                     <div className="max-h-60 overflow-y-auto" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
                       {filteredModels.map((model) => (
                         <button
-                          key={model}
+                          key={model.id}
                           onClick={() => {
-                            setSelectedModel(model);
+                            setSelectedModel(model.id);
                             setShowModelDropdown(false);
                             setModelSearch('');
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors text-foreground ${
-                            selectedModel === model ? 'bg-accent/10 text-accent' : ''
-                          }`}
+                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors text-foreground ${selectedModel === model.id ? 'bg-accent/10 text-accent' : ''
+                            }`}
                         >
-                          {model}
+                          {model.name}
                         </button>
                       ))}
+
                     </div>
                   </motion.div>
                 )}
@@ -457,21 +434,20 @@ export function PhoneCoverCustomizer() {
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">3</div>
               <h3 className="font-semibold">Select Cover Type</h3>
             </div>
-            
-            <RadioGroup 
-              value={selectedCoverType} 
+
+            <RadioGroup
+              value={selectedCoverType}
               onValueChange={setSelectedCoverType}
               className="grid gap-3"
             >
-              {COVER_TYPES.map((cover) => (
+              {coverTypes.map((cover) => (
                 <Label
                   key={cover.id}
                   htmlFor={cover.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                    selectedCoverType === cover.id 
-                      ? 'border-accent bg-accent/10' 
+                  className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedCoverType === cover.id
+                      ? 'border-accent bg-accent/10'
                       : 'border-border hover:border-muted-foreground/50'
-                  }`}
+                    }`}
                 >
                   <RadioGroupItem value={cover.id} id={cover.id} />
                   <div className="flex-1">
@@ -490,7 +466,7 @@ export function PhoneCoverCustomizer() {
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">4</div>
               <h3 className="font-semibold">Upload Your Photo</h3>
             </div>
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -498,12 +474,12 @@ export function PhoneCoverCustomizer() {
               onChange={handleImageUpload}
               className="hidden"
             />
-            
+
             {uploadedImage ? (
               <div className="relative">
-                <img 
-                  src={uploadedImage} 
-                  alt="Uploaded" 
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded"
                   className="w-full aspect-video object-contain rounded-xl bg-muted/30"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
@@ -534,7 +510,7 @@ export function PhoneCoverCustomizer() {
                 <p className="text-sm text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
               </button>
             )}
-            
+
             <div className="mt-4 p-3 bg-accent/10 rounded-lg">
               <p className="text-xs text-muted-foreground flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-accent mt-0.5 shrink-0" />
@@ -549,7 +525,7 @@ export function PhoneCoverCustomizer() {
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">5</div>
               <h3 className="font-semibold">Special Instructions (Optional)</h3>
             </div>
-            
+
             <Textarea
               placeholder="Add any special instructions for your order (e.g., specific placement, color adjustments, text to add...)"
               value={specialInstructions}
@@ -557,7 +533,7 @@ export function PhoneCoverCustomizer() {
               className="min-h-[100px] resize-none"
               maxLength={500}
             />
-            
+
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <p className="flex items-center gap-1">
                 <FileText className="w-3 h-3" />

@@ -13,7 +13,8 @@ const navLinks = [
   { name: 'Home', path: '/' },
   { name: 'Shop', path: '/shop' },
   { name: 'Customize', path: '/customize' },
-  { name: 'About', path: '/about' }
+  { name: 'About', path: '/about' },
+  , { name: 'Return Policy', path: '/returns' }
 ];
 
 export const Navbar = () => {
@@ -29,28 +30,29 @@ export const Navbar = () => {
   const wishlistItems = useWishlistStore(state => state.items);
   const openCart = useCartStore(state => state.openCart);
 
-  /* Scroll effect */
+  /* ---------------- SCROLL EFFECT ---------------- */
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => setIsMobileMenuOpen(false), [location]);
-
-  /* ✅ Get user from backend */
+  /* ---------------- CLOSE MOBILE ON ROUTE CHANGE ---------------- */
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const res = await apiFetch('/api/auth/me');
-        setUser(res.user);
-      } catch {
-        setUser(null);
-      }
-    };
-    loadUser();
+    setIsMobileMenuOpen(false);
+  }, [location]);
+
+  /* ---------------- FETCH LOGGED USER ---------------- */
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    apiFetch('/api/auth/me')
+      .then((data) => setUser(data))
+      .catch(() => setUser(null));
   }, []);
 
+  /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -63,7 +65,7 @@ export const Navbar = () => {
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? 'bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-lg'
+          ? 'bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-lg shadow-background/50'
           : 'bg-gradient-to-b from-background/80 to-transparent'
       }`}
     >
@@ -72,7 +74,10 @@ export const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <span className="text-2xl font-bold text-gradient-accent">The Design Hive</span>
+            <motion.div whileHover={{ scale: 1.05 }} className="relative">
+              <span className="text-2xl font-bold text-gradient-accent">The Design Hive</span>
+              <motion.div className="absolute -bottom-1 left-0 h-0.5 bg-accent-gradient w-0 group-hover:w-full transition-all duration-300" />
+            </motion.div>
           </Link>
 
           {/* Desktop Nav */}
@@ -81,7 +86,7 @@ export const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-medium ${
+                className={`relative text-sm font-medium ${
                   location.pathname === link.path
                     ? 'text-accent'
                     : 'text-foreground/70 hover:text-foreground'
@@ -97,38 +102,51 @@ export const Navbar = () => {
 
             <ThemeToggle />
 
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSearchOpen(true)}
+              className="hidden md:flex w-10 h-10 rounded-full bg-muted/50 items-center justify-center"
+            >
+              <Search className="w-5 h-5" />
+            </motion.button>
+
             <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
 
+            {/* Wishlist */}
             <Link to="/wishlist">
-              <div className="relative">
-                <Heart />
+              <div className="relative hidden md:flex w-10 h-10 rounded-full bg-muted/50 items-center justify-center">
+                <Heart className="w-5 h-5" />
                 {wishlistItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 text-xs bg-accent rounded-full px-1">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-accent text-white rounded-full flex items-center justify-center">
                     {wishlistItems.length}
                   </span>
                 )}
               </div>
             </Link>
 
-            <button onClick={openCart} className="relative">
-              <ShoppingBag />
+            {/* Cart */}
+            <div onClick={openCart} className="relative w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center cursor-pointer">
+              <ShoppingBag className="w-5 h-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 text-xs bg-accent rounded-full px-1">
+                <span className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-accent text-white rounded-full flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
-            </button>
+            </div>
 
-            {/* ✅ User */}
+            {/* USER */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button>
-                    <User />
-                  </button>
+                  <div className="hidden md:flex w-10 h-10 rounded-full bg-accent/20 items-center justify-center cursor-pointer">
+                    <User className="w-5 h-5 text-accent" />
+                  </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>{user.email}</DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem className="text-sm text-muted-foreground">
+                    {user.email}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/orders')}>
                     <Package className="w-4 h-4 mr-2" />
                     My Orders
@@ -141,30 +159,22 @@ export const Navbar = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <User />
+                <div className="hidden md:flex w-10 h-10 rounded-full bg-muted/50 items-center justify-center">
+                  <User className="w-5 h-5" />
+                </div>
               </Link>
             )}
 
-            {/* Mobile toggle */}
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden">
+            {/* Mobile Menu */}
+            <div
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center"
+            >
               {isMobileMenuOpen ? <X /> : <Menu />}
-            </button>
+            </div>
           </div>
         </nav>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div className="md:hidden bg-background border-b border-border p-4">
-            {navLinks.map(link => (
-              <Link key={link.name} to={link.path} className="block py-2">
-                {link.name}
-              </Link>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.header>
   );
 };

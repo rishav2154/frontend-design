@@ -21,23 +21,19 @@ export const useWishlistStore = create<WishlistStore>()(
   persist(
     (set, get) => ({
       items: [],
-
       addItem: (item) => {
         set((state) => ({
           items: [...state.items, item],
         }));
       },
-
       removeItem: (id) => {
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
         }));
       },
-
       isInWishlist: (id) => {
         return get().items.some((item) => item.id === id);
       },
-
       toggleItem: (item) => {
         const isInWishlist = get().isInWishlist(item.id);
         if (isInWishlist) {

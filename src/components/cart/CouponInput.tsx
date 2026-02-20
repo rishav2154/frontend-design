@@ -31,9 +31,11 @@ export const CouponInput = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/coupons/validate/${code.toUpperCase().trim()}`
-      );
+      // ✅ FIXED: Match backend route /coupons/validate/:code
+     const res = await fetch(
+  `http://localhost:5000/coupons/validate/${code.toUpperCase().trim()}`
+);
+
 
       if (!res.ok) {
         throw new Error('Invalid coupon');
@@ -87,7 +89,7 @@ export const CouponInput = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setLoading(true);
     }
   };
 

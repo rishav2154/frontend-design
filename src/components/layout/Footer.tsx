@@ -12,22 +12,8 @@ const footerLinks = {
   ],
   company: [
     { name: 'About Us', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-    { name: 'Careers', path: '/careers' },
-    { name: 'Press', path: '/press' },
-  ],
-  support: [
-    { name: 'FAQ', path: '/faq' },
-    { name: 'Shipping', path: '/shipping' },
-    { name: 'Returns', path: '/returns' },
-    { name: 'Size Guide', path: '/size-guide' },
-  ],
-  legal: [
-    { name: 'Privacy Policy', path: '/privacy' },
-    { name: 'Terms of Service', path: '/terms' },
-    { name: 'Cookie Policy', path: '/cookies' },
-  ],
-};
+    { name: 'Contact', path: '/returns' },
+    ]};
 
 const socialLinks = [
   { icon: Instagram, href: '#', label: 'Instagram' },
@@ -125,21 +111,7 @@ export const Footer = () => {
             </div>
 
             {/* Support Links */}
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Support</h4>
-              <ul className="space-y-3">
-                {footerLinks.support.map((link) => (
-                  <li key={link.name}>
-                    <Link
-                      to={link.path}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+
 
             {/* Contact Info with Map */}
             <div>
@@ -147,15 +119,15 @@ export const Footer = () => {
               <ul className="space-y-3">
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  hello@giftoria.com
+                  daljeet0113@gmail.com
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
-                  +91 98765 43210
+                  +91 78275 25257
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 mt-0.5" />
-                  <span>123 MG Road, Bangalore, Karnataka 560001</span>
+                  <span>near vinod general store sanjay gandhi transport</span>
                 </li>
               </ul>
               
@@ -181,17 +153,7 @@ export const Footer = () => {
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Giftoria. All rights reserved.
             </p>
-            <div className="flex gap-6">
-              {footerLinks.legal.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
+            
           </div>
         </div>
       </div>

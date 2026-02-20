@@ -26,6 +26,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminResetPassword from "./pages/admin/AdminResetPassword";
+import ReturnPolicy from "./pages/ReturnPolicy";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ const AnimatedRoutes = () => {
         <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
         <Route path="/customize" element={<PageTransition><Customize /></PageTransition>} />
-        <Route path="/customize-phone-cover" element={<PageTransition><CustomizePhoneCover /></PageTransition>} />
+        <Route path="/product/customize-phone-cover" element={<PageTransition><CustomizePhoneCover /></PageTransition>} />
         <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
@@ -51,6 +52,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin/reset-password" element={<PageTransition><AdminResetPassword /></PageTransition>} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/returns" element={<PageTransition><ReturnPolicy /></PageTransition>} />
         <Route path="/admin/orders" element={<AdminOrders />} />
         <Route path="/admin/coupons" element={<AdminCoupons />} />
         <Route path="/admin/users" element={<AdminUsers />} />

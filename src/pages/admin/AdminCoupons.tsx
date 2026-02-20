@@ -3,10 +3,9 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
+  Table, TableBody, TableCell,
+  TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
   Select, SelectContent, SelectItem,
@@ -26,7 +25,7 @@ interface Coupon {
   id: string;
   code: string;
   description: string | null;
-  discount_type: string;
+  discount_type: 'percentage' | 'fixed' | 'free_shipping';
   discount_value: number;
   min_order_amount: number | null;
   max_discount: number | null;
@@ -37,6 +36,8 @@ interface Coupon {
 }
 
 const AdminCoupons = () => {
+  const { toast } = useToast();
+
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,14 +54,14 @@ const AdminCoupons = () => {
     valid_until: '',
   });
 
-  const { toast } = useToast();
+  /* ================= FETCH ================= */
 
   const fetchCoupons = async () => {
     try {
       const data = await apiFetch('/api/admin/coupons');
       setCoupons(data);
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast({ title: 'Error', description: err.message });
     } finally {
       setLoading(false);
     }
@@ -69,6 +70,8 @@ const AdminCoupons = () => {
   useEffect(() => {
     fetchCoupons();
   }, []);
+
+  /* ================= FORM ================= */
 
   const resetForm = () => {
     setFormData({
@@ -111,9 +114,11 @@ const AdminCoupons = () => {
       resetForm();
       fetchCoupons();
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast({ title: 'Error', description: err.message });
     }
   };
+
+  /* ================= ACTIONS ================= */
 
   const handleEdit = (coupon: Coupon) => {
     setEditingCoupon(coupon);
@@ -131,7 +136,9 @@ const AdminCoupons = () => {
   };
 
   const toggleActive = async (coupon: Coupon) => {
-    await apiFetch(`/api/admin/coupons/${coupon.id}/toggle`, { method: 'PATCH' });
+    await apiFetch(`/api/admin/coupons/${coupon.id}/toggle`, {
+      method: 'PATCH',
+    });
     fetchCoupons();
   };
 
@@ -140,6 +147,8 @@ const AdminCoupons = () => {
     await apiFetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
     fetchCoupons();
   };
+
+  /* ================= UI ================= */
 
   return (
     <AdminLayout>
@@ -154,7 +163,10 @@ const AdminCoupons = () => {
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 w-4 h-4"/>Add Coupon</Button>
+              <Button>
+                <Plus className="mr-2 w-4 h-4" />
+                Add Coupon
+              </Button>
             </DialogTrigger>
 
             <DialogContent>
@@ -166,17 +178,23 @@ const AdminCoupons = () => {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
-                  placeholder="Code"
+                  placeholder="Coupon Code"
                   value={formData.code}
-                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
                   required
                 />
 
                 <Select
                   value={formData.discount_type}
-                  onValueChange={(v)=>setFormData({...formData, discount_type: v})}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, discount_type: v })
+                  }
                 >
-                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percentage">Percentage</SelectItem>
                     <SelectItem value="fixed">Fixed</SelectItem>
@@ -184,18 +202,28 @@ const AdminCoupons = () => {
                   </SelectContent>
                 </Select>
 
-                <Input type="number" placeholder="Discount Value"
+                <Input
+                  type="number"
+                  placeholder="Discount Value"
                   value={formData.discount_value}
-                  onChange={(e)=>setFormData({...formData, discount_value: +e.target.value})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      discount_value: Number(e.target.value),
+                    })
+                  }
                 />
 
-                <Input type="date"
+                <Input
+                  type="date"
                   value={formData.valid_until}
-                  onChange={(e)=>setFormData({...formData, valid_until: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, valid_until: e.target.value })
+                  }
                 />
 
                 <Button type="submit" className="w-full">
-                  {editingCoupon ? 'Update' : 'Create'}
+                  {editingCoupon ? 'Update Coupon' : 'Create Coupon'}
                 </Button>
               </form>
             </DialogContent>
@@ -205,14 +233,15 @@ const AdminCoupons = () => {
         {/* Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <Tag className="w-5 h-5"/> All Coupons
+            <CardTitle className="flex items-center gap-2">
+              <Tag className="w-5 h-5" />
+              All Coupons
             </CardTitle>
           </CardHeader>
 
           <CardContent>
             {loading ? (
-              <Loader2 className="animate-spin"/>
+              <Loader2 className="animate-spin" />
             ) : (
               <Table>
                 <TableHeader>
@@ -221,14 +250,16 @@ const AdminCoupons = () => {
                     <TableHead>Type</TableHead>
                     <TableHead>Value</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead/>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {coupons.map(c => (
+                  {coupons.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-mono">{c.code}</TableCell>
+                      <TableCell className="font-mono">
+                        {c.code}
+                      </TableCell>
                       <TableCell>
                         <Badge>{c.discount_type}</Badge>
                       </TableCell>
@@ -240,15 +271,19 @@ const AdminCoupons = () => {
                       <TableCell>
                         <Switch
                           checked={c.is_active}
-                          onCheckedChange={()=>toggleActive(c)}
+                          onCheckedChange={() => toggleActive(c)}
                         />
                       </TableCell>
                       <TableCell className="flex gap-2">
-                        <Button size="sm" onClick={()=>handleEdit(c)}>
-                          <Pencil className="w-4 h-4"/>
+                        <Button size="sm" onClick={() => handleEdit(c)}>
+                          <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={()=>handleDelete(c.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500"/>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(c.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -258,7 +293,6 @@ const AdminCoupons = () => {
             )}
           </CardContent>
         </Card>
-
       </div>
     </AdminLayout>
   );
