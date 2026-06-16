@@ -1,435 +1,354 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Grid3X3,
-  Grid2X2,
-  SlidersHorizontal,
-  Search,
-  X
-} from 'lucide-react';
-
+import { Filter, Grid3X3, Grid2X2, SlidersHorizontal, X, Search } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { ProductCard } from '@/components/products/ProductCard';
-
 import { useProducts, categories } from '@/hooks/useProducts';
-
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ProductGridSkeleton } from '@/components/ui/product-skeleton';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gridCols, setGridCols] = useState<3 | 4>(4);
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Initialize filters from URL params
-  const [priceRange, setPriceRange] = useState([
-    Number(searchParams.get('minPrice')) || 0,
-    Number(searchParams.get('maxPrice')) || 1000
-  ]);
+  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+
   const selectedCategory = searchParams.get('category') || '';
-
   const { data: products = [], isLoading } = useProducts();
-  const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Debounced URL updates
-  const updateSearchParams = useCallback((updates: Record<string, string | null>) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      const newParams = new URLSearchParams(searchParams);
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === '') {
-          newParams.delete(key);
-        } else {
-          newParams.set(key, String(value));
-        }
-      });
-      setSearchParams(newParams, { replace: true });
-    }, 400);
-  }, [searchParams, setSearchParams]);
-
-  // Sync URL changes back to local state
-  useEffect(() => {
-    setSearchQuery(searchParams.get('search') || '');
-    setPriceRange([
-      Number(searchParams.get('minPrice')) || 0,
-      Number(searchParams.get('maxPrice')) || 1000
-    ]);
-  }, [searchParams]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Filter products
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return products.filter((product) => {
+      const matchesCategory = !selectedCategory || product.category.toLowerCase() === selectedCategory.toLowerCase();
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-      const matchesSearch = !searchQuery.trim() ||
+      const matchesSearch = !searchQuery.trim() || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-
+        product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesPrice && matchesSearch;
     });
   }, [products, selectedCategory, priceRange, searchQuery]);
 
-  // Move custom product to top
-  const finalProducts = useMemo(() => {
-    if (!filteredProducts.length) return [];
-
-    const sorted = [...filteredProducts];
-    const customIndex = sorted.findIndex(product =>
-      product.id === "customize-phone-cover" || product.category === "custom"
-    );
-
-    if (customIndex !== -1) {
-      const customProduct = sorted.splice(customIndex, 1)[0];
-      customProduct.isCustom = true;
-      sorted.unshift(customProduct);
-    }
-
-    return sorted;
-  }, [filteredProducts]);
-
   const handleCategoryChange = (categoryId: string) => {
-    updateSearchParams({ 
-      category: categoryId === selectedCategory ? null : categoryId 
-    });
+    if (categoryId === selectedCategory) {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', categoryId);
+    }
+    setSearchParams(searchParams);
   };
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    updateSearchParams({ search: value || null });
-  };
-
-  const handlePriceChange = (value: [number, number]) => {
-    setPriceRange(value);
-    updateSearchParams({
-      minPrice: value[0].toString(),
-      maxPrice: value[1].toString()
-    });
-  };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setPriceRange([0, 1000]);
-    updateSearchParams({
-      search: null,
-      category: null,
-      minPrice: null,
-      maxPrice: null
-    });
-    setShowFilters(false);
-  };
-
-  const gridClassName = useMemo(() => {
-    return gridCols === 3 ? 'grid-cols-3' : 'grid-cols-4';
-  }, [gridCols]);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          {/* HEADER */}
+      <main className="pt-20 sm:pt-24 pb-12 sm:pb-16">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-8">
+          {/* Page Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-6 sm:mb-8"
           >
-            <span className="text-accent font-medium text-sm uppercase tracking-wider">
+            <span className="text-accent font-medium text-xs sm:text-sm tracking-wider uppercase">
               Shop Our Collection
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold mt-4">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mt-2 sm:mt-4">
               {selectedCategory
-                ? categories.find(c => c.id === selectedCategory)?.name || 'All Products'
-                : 'All Products'
-              }
+                ? categories.find((c) => c.id === selectedCategory)?.name || 'All Products'
+                : 'All Products'}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
-              Explore our curated selection of premium personalized gifts
-            </p>
+          </motion.div>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="max-w-xl mx-auto mb-6 sm:mb-10"
+          >
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 pr-10 h-12 rounded-full text-base bg-muted/50 border-border focus:bg-background"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </motion.div>
 
           <div className="flex gap-8">
-            {/* SIDEBAR */}
+            {/* Sidebar Filters - Desktop */}
             <motion.aside
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="hidden lg:block w-64 flex-shrink-0"
             >
               <div className="glass-card p-6 sticky top-28">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-semibold flex gap-2 items-center">
-                    <SlidersHorizontal className="w-5 h-5" />
-                    Filters
-                  </h3>
-                  {(searchQuery || selectedCategory || priceRange[0] > 0 || priceRange[1] < 1000) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="text-xs h-6 px-2"
-                    >
-                      Clear All
-                    </Button>
-                  )}
-                </div>
+                <h3 className="font-semibold mb-6 flex items-center gap-2">
+                  <SlidersHorizontal className="w-5 h-5" />
+                  Filters
+                </h3>
 
-                {/* CATEGORY */}
+                {/* Categories */}
                 <div className="mb-8">
                   <h4 className="text-sm font-medium mb-4 text-muted-foreground">
                     Categories
                   </h4>
                   <div className="space-y-2">
-                    {categories.map(category => (
+                    {categories.map((category) => (
                       <button
                         key={category.id}
                         onClick={() => handleCategoryChange(category.id)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                           selectedCategory === category.id
-                            ? 'bg-accent text-accent-foreground font-medium'
+                            ? 'bg-accent text-accent-foreground'
                             : 'hover:bg-muted'
                         }`}
                       >
-                        {category.icon}
-                        <span>{category.name}</span>
+                        <span className="mr-2">{category.icon}</span>
+                        {category.name}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* SEARCH */}
+                {/* Search */}
                 <div className="mb-8">
                   <h4 className="text-sm font-medium mb-4 text-muted-foreground">
                     Search
                   </h4>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      value={searchQuery}
-                      onChange={e => handleSearchChange(e.target.value)}
-                      className="pl-9 h-10"
+                      type="text"
                       placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
                     />
                   </div>
                 </div>
 
-                {/* PRICE */}
-                <div>
+                {/* Price Range */}
+                <div className="mb-8">
                   <h4 className="text-sm font-medium mb-4 text-muted-foreground">
                     Price Range
                   </h4>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    ₹{priceRange[0]} - ₹{priceRange[1]}
-                  </div>
                   <Slider
                     value={priceRange}
-                    onValueChange={handlePriceChange}
+                    onValueChange={setPriceRange}
                     max={1000}
                     step={10}
-                    className="w-full"
+                    className="mb-4"
                   />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>₹{priceRange[0]}</span>
+                    <span>₹{priceRange[1]}</span>
+                  </div>
                 </div>
+
+                {/* Clear Filters */}
+                {(selectedCategory || priceRange[0] > 0 || priceRange[1] < 1000 || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      searchParams.delete('category');
+                      searchParams.delete('search');
+                      setSearchParams(searchParams);
+                      setPriceRange([0, 1000]);
+                      setSearchQuery('');
+                    }}
+                    className="w-full py-2 text-sm text-accent hover:underline"
+                  >
+                    Clear All Filters
+                  </button>
+                )}
               </div>
             </motion.aside>
 
-            {/* MAIN CONTENT */}
+            {/* Main Content */}
             <div className="flex-1">
-              {/* MOBILE FILTERS BUTTON */}
-              <div className="lg:hidden mb-6">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <span className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4" />
-                    Filters
-                  </span>
-                  {showFilters ? <X className="w-4 h-4" /> : null}
-                </Button>
-              </div>
-
-              {/* MOBILE FILTERS PANEL */}
-              <AnimatePresence>
-                {showFilters && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="lg:hidden mb-6 p-6 bg-muted/50 backdrop-blur-sm rounded-xl space-y-6"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-lg flex gap-2 items-center">
-                        <SlidersHorizontal className="w-5 h-5" />
-                        Filters
-                      </h3>
-                      {(searchQuery || selectedCategory || priceRange[0] > 0 || priceRange[1] < 1000) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearFilters}
-                          className="text-xs h-6 px-2"
-                        >
-                          Clear All
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Mobile Category */}
-                    <div>
-                      <h4 className="text-sm font-medium mb-4 text-muted-foreground">
-                        Categories
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {categories.map(category => (
-                          <button
-                            key={category.id}
-                            onClick={() => handleCategoryChange(category.id)}
-                            className={`p-3 rounded-lg text-sm transition-colors flex flex-col items-center gap-1 ${
-                              selectedCategory === category.id
-                                ? 'bg-accent text-accent-foreground font-medium'
-                                : 'hover:bg-muted'
-                            }`}
-                          >
-                            {category.icon}
-                            <span className="text-xs">{category.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Mobile Search */}
-                    <div>
-                      <h4 className="text-sm font-medium mb-4 text-muted-foreground">
-                        Search
-                      </h4>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                        <Input
-                          value={searchQuery}
-                          onChange={e => handleSearchChange(e.target.value)}
-                          className="pl-9 h-10"
-                          placeholder="Search products..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Mobile Price */}
-                    <div>
-                      <h4 className="text-sm font-medium mb-4 text-muted-foreground">
-                        Price Range
-                      </h4>
-                      <div className="text-xs text-muted-foreground mb-2">
-                        ₹{priceRange[0]} - ₹{priceRange[1]}
-                      </div>
-                      <Slider
-                        value={priceRange}
-                        onValueChange={handlePriceChange}
-                        max={1000}
-                        step={10}
-                        className="w-full"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* CONTROLS */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center glass-card p-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-semibold">{finalProducts.length}</span> of{' '}
-                  <span className="font-semibold">{products.length}</span> products
+              {/* Toolbar */}
+              <div className="flex items-center justify-between mb-4 sm:mb-6 p-3 sm:p-4 glass-card">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{filteredProducts.length}</span> products
                 </p>
-                <div className="flex gap-2">
+
+              <div className="flex items-center gap-2 sm:gap-4">
+                  {/* Mobile Filter Toggle */}
                   <button
-                    onClick={() => setGridCols(3)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      gridCols === 3 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
-                    }`}
+                    onClick={() => setShowFilters(true)}
+                    className="lg:hidden flex items-center gap-1.5 text-xs sm:text-sm font-medium"
                   >
-                    <Grid2X2 className="w-5 h-5" />
+                    <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    Filters
                   </button>
-                  <button
-                    onClick={() => setGridCols(4)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      gridCols === 4 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
-                    }`}
-                  >
-                    <Grid3X3 className="w-5 h-5" />
-                  </button>
+
+                  {/* Grid Toggle */}
+                  <div className="hidden sm:flex items-center gap-2 border-l border-border pl-4">
+                    <button
+                      onClick={() => setGridCols(3)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        gridCols === 3 ? 'bg-muted' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Grid2X2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setGridCols(4)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        gridCols === 4 ? 'bg-muted' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Grid3X3 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* PRODUCT GRID */}
+              {/* Products Grid */}
               {isLoading ? (
                 <ProductGridSkeleton count={8} />
               ) : (
-                <motion.div
-                  layout
-                  className={`grid gap-6 ${gridClassName}`}
-                  key={gridClassName}
-                >
-                  <AnimatePresence>
-                    {finalProducts.map((product: any, index) => {
-                      const isCustom =
-                        product.isCustom ||
-                        product.id === "customize-phone-cover" ||
-                        product.category === "custom";
+                <>
+                  <motion.div
+                    layout
+                    className={`grid gap-3 sm:gap-6 ${
+                      gridCols === 3
+                        ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3'
+                        : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    }`}
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {filteredProducts.map((product, index) => (
+                        <ProductCard key={product.id} product={product} index={index} />
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
 
-                      return isCustom ? (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          whileHover={{ scale: 1.05 }}
-                          className="relative"
-                          layout
-                        >
-                          <div className="absolute top-3 left-3 z-20 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                            Customize Now
-                          </div>
-                          <Link
-                            to="/customize-phone-cover"
-                            className="block ring-2 ring-pink-500/40 rounded-xl hover:ring-pink-500/60 transition-all"
-                          >
-                            <ProductCard product={product} index={index} />
-                          </Link>
-                        </motion.div>
-                      ) : (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          index={index}
-                        />
-                      );
-                    })}
-                  </AnimatePresence>
-                </motion.div>
+                  {/* Empty State */}
+                  {filteredProducts.length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-16"
+                    >
+                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+                        <Filter className="w-10 h-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">No products found</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Try adjusting your filters to see more results.
+                      </p>
+                      <button
+                        onClick={() => {
+                          searchParams.delete('category');
+                          setSearchParams(searchParams);
+                          setPriceRange([0, 1000]);
+                        }}
+                        className="btn-luxury"
+                      >
+                        Clear Filters
+                      </button>
+                    </motion.div>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Mobile Filters Drawer */}
+      <AnimatePresence>
+        {showFilters && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFilters(false)}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 lg:hidden"
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 p-6 lg:hidden"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <SlidersHorizontal className="w-5 h-5" />
+                  Filters
+                </h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 rounded-full hover:bg-muted"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Categories */}
+              <div className="mb-8">
+                <h4 className="text-sm font-medium mb-4 text-muted-foreground">Categories</h4>
+                <div className="space-y-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        handleCategoryChange(category.id);
+                        setShowFilters(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedCategory === category.id
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <span className="mr-2">{category.icon}</span>
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="mb-8">
+                <h4 className="text-sm font-medium mb-4 text-muted-foreground">Price Range</h4>
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={1000}
+                  step={10}
+                  className="mb-4"
+                />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>₹{priceRange[0]}</span>
+                  <span>₹{priceRange[1]}</span>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <Footer />
     </div>
   );

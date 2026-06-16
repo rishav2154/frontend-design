@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useState, useCallback } from 'react';
 import { Star } from 'lucide-react';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://api.thedesignhive.tech/api';
 
 interface ReviewFormProps {
   productId: string;

@@ -69,34 +69,153 @@
   }
 
   .light {
-    --background: 40 20% 98%;
-    --foreground: 240 10% 10%;
+    --background: 0 0% 97%;
+    --foreground: 220 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 220 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 220 15% 15%;
 
     --primary: 199 50% 23%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 40 20% 96%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 15%;
 
-    --muted: 40 20% 96%;
-    --muted-foreground: 240 5% 45%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 339 78% 53%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 339 78% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 20% 90%;
-    --input: 40 20% 90%;
-    --ring: 339 78% 53%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 339 78% 50%;
+
+    /* Custom Luxury Colors - Light */
+    --luxury-deep-1: 199 35% 95%;
+    --luxury-deep-2: 199 25% 88%;
+    --luxury-deep-3: 199 20% 82%;
+
+    --accent-warm: 14 90% 52%;
+    --accent-pink: 339 78% 48%;
+
+    --gold: 38 92% 50%;
+    --gold-muted: 38 50% 55%;
+
+    /* Glassmorphism - Light */
+    --glass-bg: 0 0% 100% / 0.75;
+    --glass-border: 220 13% 86% / 0.6;
+    --glass-shadow: 220 15% 15% / 0.05;
+
+    /* Sidebar - Light */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 339 78% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 15% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 339 78% 50%;
   }
+
+  /* Light mode enhanced borders */
+  .light {
+    --border: 220 13% 82%;
+  }
+}
+
+/* ===== LIGHT MODE ENHANCEMENTS ===== */
+
+/* Navbar in light mode */
+.light header {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+}
+
+/* Cards get a subtle lift in light mode */
+.light .bg-card,
+.light [class*="bg-card"] {
+  box-shadow: 0 1px 3px hsl(220 15% 15% / 0.05), 0 1px 2px hsl(220 15% 15% / 0.03);
+}
+
+/* Section alternating backgrounds are more visible */
+.light .bg-muted\/30 {
+  background-color: hsl(220 14% 95% / 0.6);
+  border-top: 1px solid hsl(220 13% 90%);
+  border-bottom: 1px solid hsl(220 13% 90%);
+}
+
+.light .bg-muted\/50 {
+  background-color: hsl(220 14% 94% / 0.7);
+  border-top: 1px solid hsl(220 13% 90%);
+  border-bottom: 1px solid hsl(220 13% 90%);
+}
+
+.light .bg-muted\/40 {
+  background-color: hsl(220 14% 95% / 0.65);
+  border-top: 1px solid hsl(220 13% 90%);
+}
+
+/* Stronger product card borders and hover in light */
+.light .group:hover {
+  box-shadow: 0 4px 16px hsl(220 15% 15% / 0.08), 0 2px 6px hsl(220 15% 15% / 0.04);
+}
+
+/* Better input fields in light mode */
+.light input,
+.light textarea {
+  border-color: hsl(220 13% 84%);
+}
+
+.light input:focus,
+.light textarea:focus {
+  border-color: hsl(339 78% 50%);
+  box-shadow: 0 0 0 3px hsl(339 78% 50% / 0.08);
+}
+
+/* Rounded buttons get subtle borders in light */
+.light .rounded-full.bg-muted\/50 {
+  border: 1px solid hsl(220 13% 88%);
+}
+
+/* Rating/badge backgrounds pop more */
+.light .bg-accent\/10,
+.light .bg-accent\/15 {
+  border: 1px solid hsl(339 78% 50% / 0.12);
+}
+
+/* Search bar enhancement */
+.light .shadow-xl {
+  box-shadow: 0 4px 20px hsl(220 15% 15% / 0.08), 0 1px 4px hsl(220 15% 15% / 0.04);
+}
+
+/* Footer light mode */
+.light footer {
+  border-top: 1px solid hsl(220 13% 88%);
+}
+
+/* Dropdown menus */
+.light [role="menu"] {
+  border: 1px solid hsl(220 13% 86%);
+  box-shadow: 0 4px 16px hsl(220 15% 15% / 0.08);
+}
+
+/* Scrollbar in light mode */
+.light ::-webkit-scrollbar-track {
+  background: hsl(0 0% 97%);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: hsl(220 13% 86%);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 13% 70%);
 }
 
 @layer base {
@@ -134,6 +253,11 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid hsl(var(--glass-border));
     box-shadow: 0 8px 32px hsl(var(--glass-shadow));
+  }
+
+  /* Light mode card elevation */
+  .light .glass-card {
+    box-shadow: 0 1px 3px hsl(220 15% 15% / 0.06), 0 4px 16px hsl(220 15% 15% / 0.04);
   }
 
   .glass-card-hover {

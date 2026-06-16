@@ -33,8 +33,7 @@ export const CouponInput = () => {
     try {
       // ✅ FIXED: Match backend route /coupons/validate/:code
      const res = await fetch(
-  `http://localhost:5000/coupons/validate/${code.toUpperCase().trim()}`
-);
+  `https://api.thedesignhive.tech/coupons/validate/${code.toUpperCase().trim()}` );
 
 
       if (!res.ok) {
@@ -73,6 +72,7 @@ export const CouponInput = () => {
         discountValue: Number(coupon.discount_value),
         maxDiscount: coupon.max_discount || undefined,
         description: coupon.description || undefined,
+        discount: undefined
       });
 
       setCode('');

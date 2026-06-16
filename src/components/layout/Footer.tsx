@@ -12,8 +12,9 @@ const footerLinks = {
   ],
   company: [
     { name: 'About Us', path: '/about' },
-    { name: 'Contact', path: '/returns' },
-    ]};
+    { name: 'Contact', path: '/contact' }, // Fixed path from old '/returns'
+  ],
+};
 
 const socialLinks = [
   { icon: Instagram, href: '#', label: 'Instagram' },
@@ -23,15 +24,15 @@ const socialLinks = [
 
 export const Footer = () => {
   return (
-    <footer className="relative overflow-hidden">
+    <footer className="relative overflow-hidden pb-16 md:pb-0">
       {/* Gradient Top Border */}
       <div className="h-1 bg-accent-gradient" />
 
-      <div className="bg-card">
-        <div className="container mx-auto px-4 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12">
+      <div className="bg-muted/40">
+        <div className="container mx-auto px-4 lg:px-8 py-10 sm:py-16">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
             {/* Brand Column */}
-            <div className="lg:col-span-2">
+            <div className="col-span-2 lg:col-span-2">
               <Link to="/" className="inline-block">
                 <span className="text-3xl font-bold text-gradient-accent">Giftoria</span>
               </Link>
@@ -41,7 +42,7 @@ export const Footer = () => {
               </p>
 
               {/* Newsletter */}
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <h4 className="text-sm font-semibold mb-3">Subscribe to our newsletter</h4>
                 <div className="flex gap-2">
                   <input
@@ -110,16 +111,13 @@ export const Footer = () => {
               </ul>
             </div>
 
-            {/* Support Links */}
-
-
-            {/* Contact Info with Map */}
+            {/* Contact Info with Map (Old Details) */}
             <div>
               <h4 className="text-sm font-semibold mb-4">Contact</h4>
               <ul className="space-y-3">
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  daljeet0113@gmail.com
+                  <a href="mailto:daljeet0113@gmail.com">daljeet0113@gmail.com</a>
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
@@ -148,12 +146,11 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* Bottom Bar */}
-          <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
+          {/* Bottom Bar (Simplified - No Legal Links) */}
+          <div className="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               © {new Date().getFullYear()} Giftoria. All rights reserved.
             </p>
-            
           </div>
         </div>
       </div>

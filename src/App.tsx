@@ -27,6 +27,9 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminResetPassword from "./pages/admin/AdminResetPassword";
 import ReturnPolicy from "./pages/ReturnPolicy";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import Account from "./pages/Account";
+
 
 const queryClient = new QueryClient();
 
@@ -34,8 +37,8 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   
   return (
-    <AnimatePresence mode="sync" initial={false}>
-      <Routes location={location} key={location.pathname}>
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname} >
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
@@ -43,6 +46,7 @@ const AnimatedRoutes = () => {
         <Route path="/product/customize-phone-cover" element={<PageTransition><CustomizePhoneCover /></PageTransition>} />
         <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
         <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
         <Route path="/order-success/:orderId" element={<PageTransition><OrderSuccess /></PageTransition>} />
         <Route path="/orders" element={<PageTransition><OrdersHistory /></PageTransition>} />
@@ -58,7 +62,9 @@ const AnimatedRoutes = () => {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
+     <MobileBottomNav />
     </AnimatePresence>
+    
   );
 };
 

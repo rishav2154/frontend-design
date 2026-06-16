@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingCart, DollarSign, Users, Tag, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://api.thedesignhive.tech/api';
 
 interface DashboardStats {
   totalOrders: number;

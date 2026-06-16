@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 
+/* ================= PRODUCT TYPE ================= */
+
 export interface Product {
   id: string;
   name: string;
@@ -8,13 +10,12 @@ export interface Product {
   price: number;
   originalPrice?: number;
   category: string;
-  images: string[];  // ✅ Backend already parses JSON → ready-to-use array
+  images: string[];
   rating: number;
   reviewCount: number;
   isCustomizable: boolean;
   tags: string[];
   stock: number;
-  colors?: string[];
   customizationOptions?: {
     canAddText: boolean;
     canAddImage: boolean;
@@ -24,54 +25,134 @@ export interface Product {
   };
 }
 
-/* ---------------- SIMPLIFIED: Backend already handles JSON parsing ---------------- */
+/* ================= CATEGORY NORMALIZER ================= */
+
+const normalizeCategory = (category: string): string => {
+  if (!category) return "uncategorized";
+
+  const map: Record<string, string> = {
+    // Mugs
+    "mugs": "magic-cup",
+    "magic-cup": "magic-cup",
+
+    // Frames
+    "frames": "photo-frame",
+    "photo-frame": "photo-frame",
+
+    // Phone Covers
+    "phone cases": "phone-cover",
+    "phone case": "phone-cover",
+    "phone-cover": "phone-cover",
+
+    // Keychains
+    "keychain": "keychain",
+    "keychains": "keychain",
+
+    // Lamps
+    "lamps": "night-lamp",
+    "night-lamp": "night-lamp",
+
+    // Custom
+    "custom": "custom"
+  };
+
+  return map[category.toLowerCase()] || category.toLowerCase();
+};
+
+/* ================= SAFE PARSERS ================= */
+
+const safeParseArray = (value: any): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const safeParseObject = (value: any): any => {
+  if (typeof value === "object" && value !== null) return value;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
+/* ================= DB → FRONTEND MAPPER ================= */
+
 const mapDbProductToFrontend = (db: any): Product => {
-  // ✅ Backend already returns parsed arrays/objects - just validate
-  const images = Array.isArray(db.images) && db.images.length > 0 
-    ? db.images.filter((img: any) => img && typeof img === 'string') 
-    : db.image_url ? [db.image_url] : ["/placeholder.svg"];
+  const imagesRaw = safeParseArray(db.images);
+  const tagsRaw = safeParseArray(db.tags);
+  const customizationRaw = safeParseObject(db.customization_options);
+
+  const images =
+    imagesRaw.length > 0
+      ? imagesRaw.filter((img) => typeof img === "string")
+      : db.image_url
+      ? [db.image_url]
+      : ["/placeholder.svg"];
 
   return {
     id: db.id,
-    name: db.name || 'Unnamed Product',
+    name: db.name || "Unnamed Product",
     description: db.description || "",
     price: Number(db.price) || 0,
-    originalPrice: db.original_price ? Number(db.original_price) : undefined,
-    category: db.category || 'Uncategorized',
-    images: images.length > 0 ? images.slice(0, 5) : ["/placeholder.svg"], // Max 5 images
+    originalPrice: db.original_price
+      ? Number(db.original_price)
+      : undefined,
+
+    // ✅ FIXED CATEGORY
+    category: normalizeCategory(db.category),
+
+    images: images.slice(0, 5),
     rating: 4.5,
     reviewCount: 0,
-    isCustomizable: !!(db.customization_options?.canAddText || db.customization_options?.canAddImage),
-    tags: Array.isArray(db.tags) ? db.tags : [],
+
+    isCustomizable:
+      !!customizationRaw.canAddText ||
+      !!customizationRaw.canAddImage,
+
+    tags: tagsRaw,
     stock: Number(db.stock) || 0,
+
     customizationOptions: {
-      canAddText: !!db.customization_options?.canAddText,
-      canAddImage: !!db.customization_options?.canAddImage,
-      allowText: !!db.customization_options?.canAddText,
-      allowImage: !!db.customization_options?.canAddImage,
+      canAddText: !!customizationRaw.canAddText,
+      canAddImage: !!customizationRaw.canAddImage,
+      allowText: !!customizationRaw.canAddText,
+      allowImage: !!customizationRaw.canAddImage,
       maxTextLength: 30,
-    }
+    },
   };
 };
 
-/* ---------------- ALL PRODUCTS ---------------- */
+/* ================= ALL PRODUCTS ================= */
+
 export const useProducts = (category?: string) => {
   return useQuery({
     queryKey: ["products", category],
     queryFn: async () => {
       const data = await apiFetch("/api/products");
       const products = (data || []).map(mapDbProductToFrontend);
-      
+
       if (category) {
-        return products.filter((p) => p.category.toLowerCase() === category.toLowerCase());
+        return products.filter((p) => p.category === category);
       }
-      
+
       return products;
     },
   });
 };
 
-/* ---------------- FEATURED PRODUCTS ---------------- */
+/* ================= FEATURED PRODUCTS ================= */
+
 export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ["featured-products"],
@@ -84,7 +165,8 @@ export const useFeaturedProducts = () => {
   });
 };
 
-/* ---------------- SINGLE PRODUCT ---------------- */
+/* ================= SINGLE PRODUCT ================= */
+
 export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ["product", id],
@@ -97,7 +179,8 @@ export const useProduct = (id: string) => {
   });
 };
 
-/* ---------------- CATEGORIES ---------------- */
+/* ================= FRONTEND CATEGORY LIST ================= */
+
 export const categories = [
   { id: "magic-cup", name: "Mugs", icon: "☕" },
   { id: "photo-frame", name: "Frames", icon: "🖼️" },

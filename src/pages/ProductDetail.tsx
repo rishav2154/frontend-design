@@ -83,7 +83,7 @@ const ProductDetail = () => {
 
     setUploading(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/upload`, formData, {
+      const res = await axios.post(`https://api.thedesignhive.tech/api/upload`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',

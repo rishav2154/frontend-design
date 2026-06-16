@@ -1,62 +1,175 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Zap, TrendingUp, Star, Timer, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useFeaturedProducts } from '@/hooks/useProducts';
+import { useFeaturedProducts, useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/products/ProductCard';
+import { useState, useEffect } from 'react';
 
-export const FeaturedProducts = () => {
-  const { data: featuredProducts = [], isLoading } = useFeaturedProducts();
+// Countdown timer component
+const CountdownTimer = () => {
+  const [time, setTime] = useState({ hours: 11, minutes: 45, seconds: 32 });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime((prev) => {
+        let { hours, minutes, seconds } = prev;
+        seconds--;
+        if (seconds < 0) { seconds = 59; minutes--; }
+        if (minutes < 0) { minutes = 59; hours--; }
+        if (hours < 0) { hours = 23; minutes = 59; seconds = 59; }
+        return { hours, minutes, seconds };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
 
   return (
-    <section className="py-24 bg-card relative overflow-hidden">
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
-        >
-          <div>
-            <span className="text-accent font-medium text-sm tracking-wider uppercase">
-              Best Sellers
-            </span>
-            <h2 className="text-3xl md:text-5xl font-bold mt-4">
-              Featured Products
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-xl">
-              Discover our most loved personalized gifts, chosen by thousands of happy customers.
-            </p>
-          </div>
-          <Link to="/shop">
-            <motion.span
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 text-accent font-medium hover:gap-3 transition-all"
-            >
-              View All Products
-              <ArrowRight className="w-5 h-5" />
-            </motion.span>
-          </Link>
-        </motion.div>
+    <div className="flex items-center gap-1">
+      {[pad(time.hours), pad(time.minutes), pad(time.seconds)].map((val, i) => (
+        <span key={i} className="flex items-center gap-1">
+          <span className="bg-background text-foreground text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded-md border border-border/50">
+            {val}
+          </span>
+          {i < 2 && <span className="text-muted-foreground text-xs font-bold">:</span>}
+        </span>
+      ))}
+    </div>
+  );
+};
 
-        {/* Products Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+interface ProductRowProps {
+  title: string;
+  icon: React.ReactNode;
+  badge?: string;
+  badgeColor?: string;
+  products: any[];
+  isLoading: boolean;
+  bgClass?: string;
+  showTimer?: boolean;
+}
+
+const ProductRow = ({ title, icon, badge, badgeColor = "bg-accent", products, isLoading, bgClass = "bg-card", showTimer }: ProductRowProps) => (
+  <section className={`py-4 sm:py-7 ${bgClass}`}>
+    <div className="container mx-auto px-2 sm:px-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+            {icon}
           </div>
-        ) : featuredProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">No featured products available.</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-xl font-bold text-foreground">{title}</h2>
+              {badge && (
+                <span className={`${badgeColor} text-accent-foreground text-[8px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse`}>
+                  {badge}
+                </span>
+              )}
+            </div>
+            {showTimer && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Ends in</span>
+                <CountdownTimer />
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
-            ))}
-          </div>
-        )}
+        </div>
+        <Link
+          to="/shop"
+          className="flex items-center gap-1 text-accent text-xs sm:text-sm font-medium hover:gap-2 transition-all"
+        >
+          View All <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
-    </section>
+
+      {/* Products */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-7 h-7 animate-spin text-accent" />
+        </div>
+      ) : products.length === 0 ? (
+        <p className="text-center text-muted-foreground py-10 text-sm">No products available.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
+          {products.slice(0, 5).map((product, index) => (
+            <ProductCard key={product.id} product={product} index={index} />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+);
+
+// Enhanced offer banners
+const OfferBanner = () => (
+  <section className="py-3 sm:py-5 bg-background">
+    <div className="container mx-auto px-2 sm:px-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        {[
+          { img: "https://images.unsplash.com/photo-1549465220-1a8b9238f37e?w=400&q=80", label: "COMBO DEALS", title: "Up to 40% Off", sub: "Gift Combos", link: "/shop?category=combos", gradient: "from-black/70 via-black/50 to-transparent" },
+          { img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80", label: "NEW ARRIVALS", title: "Photo Frames", sub: "Starting ₹449", link: "/shop?category=frames", gradient: "from-black/70 via-black/50 to-transparent" },
+          { img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80", label: "TRENDING", title: "Custom Tees", sub: "From ₹299", link: "/shop?category=tshirts", gradient: "from-black/70 via-black/50 to-transparent" },
+          { img: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80", label: "BEST SELLER", title: "Phone Covers", sub: "From ₹199", link: "/shop?category=phone-covers", gradient: "from-black/70 via-black/50 to-transparent" },
+        ].map((item, i) => (
+          <Link key={i} to={item.link} className="relative rounded-2xl overflow-hidden aspect-[3/2] group border border-border shadow-sm hover:shadow-lg transition-shadow">
+            <img
+              src={item.img}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${item.gradient}`} />
+            <div className="absolute inset-0 flex flex-col justify-center p-3 sm:p-5">
+              <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 tracking-widest uppercase mb-1">{item.label}</span>
+              <p className="text-base sm:text-xl font-bold text-white leading-tight">{item.title}</p>
+              <p className="text-[10px] sm:text-xs text-white/70 mt-0.5">{item.sub}</p>
+              <span className="mt-2 text-[10px] sm:text-xs font-semibold text-amber-400 flex items-center gap-1">
+                Shop Now <ChevronRight className="w-3 h-3" />
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+export const FeaturedProducts = () => {
+  const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+  const { data: allProducts = [], isLoading: allLoading } = useProducts();
+
+  return (
+    <>
+      <ProductRow
+        title="Deals of the Day"
+        icon={<Zap className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />}
+        badge="LIVE"
+        badgeColor="bg-destructive"
+        products={featuredProducts}
+        isLoading={featuredLoading}
+        bgClass="bg-muted/30"
+        showTimer
+      />
+
+      <OfferBanner />
+
+      <ProductRow
+        title="Trending Now"
+        icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />}
+        badge="HOT"
+        badgeColor="bg-accent"
+        products={allProducts}
+        isLoading={allLoading}
+        bgClass="bg-background"
+      />
+
+      <ProductRow
+        title="Top Rated"
+        icon={<Star className="w-4 h-4 sm:w-5 sm:h-5 text-accent fill-accent" />}
+        products={allProducts.slice().reverse()}
+        isLoading={allLoading}
+        bgClass="bg-muted/30"
+      />
+    </>
   );
 };

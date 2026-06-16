@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { BookMarked, Check } from "lucide-react";
 
 declare global {
   interface Window {
@@ -54,7 +55,8 @@ const Checkout = () => {
     pincode: ""
 
   });
-
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedSavedAddress, setSelectedSavedAddress] = useState<string | null>(null);
 
   /* ===============================
      AUTH CHECK
@@ -72,8 +74,25 @@ const Checkout = () => {
       setCheckingAuth(false);
 
   }, [navigate]);
+  // ===== FETCH SAVED ADDRESSES =====
+  // ===== FETCH SAVED ADDRESSES (SECURE VERSION) =====
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const res = await apiFetch("/api/addresses");
+        setSavedAddresses(res || []);
 
+        const defaultAddr = res?.find((a: any) => a.is_default === 1);
+        if (defaultAddr) {
+          selectSavedAddress(defaultAddr);
+        }
+      } catch (err) {
+        console.error("Failed to fetch addresses", err);
+      }
+    };
 
+    fetchAddresses();
+  }, []);
   /* ===============================
      EMPTY CART CHECK
   =============================== */
@@ -253,7 +272,21 @@ const Checkout = () => {
 
   };
 
+  // ===== SELECT SAVED ADDRESS =====
+  // ===== SELECT SAVED ADDRESS =====
+  const selectSavedAddress = (addr: any) => {
+    setSelectedSavedAddress(addr.id);
 
+    setAddress({
+      fullName: addr.full_name,
+      phone: addr.phone || "",
+      addressLine1: addr.address_line1,
+      addressLine2: addr.address_line2 || "",
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode
+    });
+  };
   /* ===============================
      ONLINE PAYMENT (RAZORPAY)
   =============================== */
@@ -308,76 +341,76 @@ const Checkout = () => {
 
 
 
-   const options = {
+      const options = {
 
-  key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
 
-  amount: razorpayOrder.amount,
+        amount: razorpayOrder.amount,
 
-  currency: "INR",
+        currency: "INR",
 
-  order_id: razorpayOrder.id,
+        order_id: razorpayOrder.id,
 
-  name: "Your Store",
+        name: "Your Store",
 
-  description: "Order Payment",
+        description: "Order Payment",
 
-  prefill: {
-    name: address.fullName,
-    email: localStorage.getItem("userEmail") || "",
-    contact: address.phone
-  },
+        prefill: {
+          name: address.fullName,
+          email: localStorage.getItem("userEmail") || "",
+          contact: address.phone
+        },
 
-  notes: {
-    phone: address.phone
-  },
+        notes: {
+          phone: address.phone
+        },
 
-  theme: {
-    color: "#6366f1"
-  },
+        theme: {
+          color: "#6366f1"
+        },
 
-  handler: async (response: any) => {
-    try {
+        handler: async (response: any) => {
+          try {
 
-      await apiFetch("/api/verify-payment", {
-        method: "POST",
-        body: JSON.stringify(response)
-      });
+            await apiFetch("/api/verify-payment", {
+              method: "POST",
+              body: JSON.stringify(response)
+            });
 
-      const res = await apiFetch("/api/checkout", {
-        method: "POST",
-        body: JSON.stringify({
-          items,
-          shipping_address: {
-            full_name: address.fullName,
-            phone: address.phone,
-            address_line1: address.addressLine1,
-            address_line2: address.addressLine2,
-            city: address.city,
-            state: address.state,
-            pincode: address.pincode
-          },
-          coupon: appliedCoupon?.code || null,
-          payment_method: "online",
-          payment_id: response.razorpay_payment_id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_signature: response.razorpay_signature
-        })
-      });
+            const res = await apiFetch("/api/checkout", {
+              method: "POST",
+              body: JSON.stringify({
+                items,
+                shipping_address: {
+                  full_name: address.fullName,
+                  phone: address.phone,
+                  address_line1: address.addressLine1,
+                  address_line2: address.addressLine2,
+                  city: address.city,
+                  state: address.state,
+                  pincode: address.pincode
+                },
+                coupon: appliedCoupon?.code || null,
+                payment_method: "online",
+                payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
 
-      clearCart();
-      navigate(`/order-success/${res.order_id}`);
+            clearCart();
+            navigate(`/order-success/${res.order_id}`);
 
-    } catch (err: any) {
-      toast({
-        title: "Payment verification failed",
-        description: err.message,
-        variant: "destructive"
-      });
-    }
-  }
+          } catch (err: any) {
+            toast({
+              title: "Payment verification failed",
+              description: err.message,
+              variant: "destructive"
+            });
+          }
+        }
 
-};
+      };
 
 
       const rzp =
@@ -542,7 +575,85 @@ const Checkout = () => {
           {/* ================= ADDRESS ================= */}
 
           <div className="lg:col-span-2 glass-card p-8 rounded-2xl shadow-sm">
+            {/* ================= SAVED ADDRESSES ================= */}
+            {savedAddresses.length > 0 && (
+              <div className="glass-card p-6 rounded-2xl shadow-sm">
 
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                    <BookMarked className="w-5 h-5 text-accent" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Saved Addresses</h2>
+                </div>
+
+                <div className="space-y-3">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => selectSavedAddress(addr)}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${selectedSavedAddress === addr.id
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-accent/50"
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+
+                        <div>
+                          <p className="font-medium text-sm">{addr.full_name}</p>
+
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {addr.address_line1}
+                            {addr.address_line2 ? `, ${addr.address_line2}` : ""}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            {addr.city}, {addr.state} - {addr.pincode}
+                          </p>
+
+                          {addr.is_default === 1 && (
+                            <span className="inline-block mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent/20 text-accent">
+                              Default
+                            </span>
+                          )}
+                        </div>
+
+                        {selectedSavedAddress === addr.id && (
+                          <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0">
+                            <Check className="w-3.5 h-3.5 text-accent-foreground" />
+                          </div>
+                        )}
+
+                      </div>
+                    </button>
+                  ))}
+
+                  {/* ENTER NEW ADDRESS OPTION */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSavedAddress(null);
+                      setAddress({
+                        fullName: "",
+                        phone: "",
+                        addressLine1: "",
+                        addressLine2: "",
+                        city: "",
+                        state: "",
+                        pincode: ""
+                      });
+                    }}
+                    className={`w-full text-left p-4 rounded-xl border-2 border-dashed transition-all ${selectedSavedAddress === null
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                      }`}
+                  >
+                    <p className="font-medium text-sm">+ Enter a new address</p>
+                  </button>
+
+                </div>
+              </div>
+            )}
             <h2 className="text-2xl font-bold mb-6">
               Shipping Address
             </h2>
@@ -829,18 +940,13 @@ ${paymentMethod === "online"
                     ).toFixed(2)}
 
                   </span>
-
                 </div>
-
               </div>
-
-
               <Button
                 onClick={handlePlaceOrder}
                 disabled={loading}
                 className="w-full mt-6 h-12 text-base font-semibold"
               >
-
                 {loading
                   ? <Loader2 className="animate-spin" />
                   : paymentMethod === "online"
@@ -848,11 +954,7 @@ ${paymentMethod === "online"
                     : "Place Order"}
 
               </Button>
-
-
             </div>
-
-
           </div>
 
 

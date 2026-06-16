@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export function PhoneCoverCustomizer() {
 
-  const API = "http://localhost:5000/api";
+  const API = "https://api.thedesignhive.tech/api";
 
   const [uploading, setUploading] = useState(false);
 

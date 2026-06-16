@@ -28,7 +28,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Loader2, Upload, X, Package, Image as ImageIcon } from 'lucide-react';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://api.thedesignhive.tech/api';
 
 interface Product {
   id: string;

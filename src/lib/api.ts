@@ -1,6 +1,6 @@
 // src/lib/api.ts
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://api.thedesignhive.tech";
 
 interface ApiOptions extends RequestInit {
   token?: string;

@@ -62,8 +62,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
         id: product.id,
         name: product.name,
         price: product.price,
-        image:
-          product.images?.[0] || "/placeholder.svg",
+        image: product.images?.[0] || "/placeholder.svg",
         category: product.category,
       });
 
@@ -88,10 +87,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
             {/* IMAGE */}
             <div className="relative aspect-square overflow-hidden">
               <motion.img
-                src={
-                  product.images?.[0] ||
-                  "/placeholder.svg"
-                }
+                src={product.images?.[0] || "/placeholder.svg"}
                 alt={product.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
@@ -126,9 +122,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
                 }`}
               >
                 <Heart
-                  className={`w-5 h-5 ${
-                    inWishlist ? "fill-current" : ""
-                  }`}
+                  className={`w-5 h-5 ${inWishlist ? "fill-current" : ""}`}
                 />
               </motion.button>
 

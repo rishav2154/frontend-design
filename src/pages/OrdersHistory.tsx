@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 import { useInvoiceDownload } from '@/hooks/useInvoiceDownload';
 import axios from 'axios';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://api.thedesignhive.tech/api';
 
 interface Customization {
   imageUrl?: string;

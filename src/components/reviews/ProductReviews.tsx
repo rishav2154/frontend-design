@@ -6,7 +6,7 @@ import axios from 'axios';
 import { ReviewCard } from './ReviewCard';
 import { ReviewForm } from './ReviewForm';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://api.thedesignhive.tech/api';
 
 interface Review {
   id: string;
