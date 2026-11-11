@@ -25,9 +25,9 @@ export interface Product {
 
 export const categories = [
   { id: 'tshirts', name: 'Custom T-Shirts', icon: '👕', description: 'Express yourself with personalized tees' },
-  { id: 'mugs', name: 'Mugs & Cups', icon: '☕', description: 'Start every day with a custom cup' },
-  { id: 'frames', name: 'Photo Frames', icon: '🖼️', description: 'Preserve memories beautifully' },
-  { id: 'phone-covers', name: 'Phone Covers', icon: '📱', description: 'Protect your device in style' },
+  { id: 'magic-cup', name: 'Mugs & Cups', icon: '☕', description: 'Start every day with a custom cup' },
+  { id: 'photo-frame', name: 'Photo Frames', icon: '🖼️', description: 'Preserve memories beautifully' },
+  { id: 'phone-cover', name: 'Phone Covers', icon: '📱', description: 'Protect your device in style' },
   { id: 'posters', name: 'Posters', icon: '🎨', description: 'Art that speaks to you' },
   { id: 'combos', name: 'Gift Combos', icon: '🎁', description: 'Perfect curated gift sets' },
 ];

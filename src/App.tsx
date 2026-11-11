@@ -29,7 +29,7 @@ import AdminResetPassword from "./pages/admin/AdminResetPassword";
 import ReturnPolicy from "./pages/ReturnPolicy";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Account from "./pages/Account";
-
+import MetaPixelTracker from "@/components/meta/MetaPixelTracker";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +76,7 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+	    <MetaPixelTracker />
             <AnimatedRoutes />
           </BrowserRouter>
         </TooltipProvider>
