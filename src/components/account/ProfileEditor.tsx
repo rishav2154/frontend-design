@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface ProfileEditorProps {
   onClose: () => void;
@@ -18,8 +19,6 @@ export const ProfileEditor = ({  onClose, onUpdated }: ProfileEditorProps) => {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.thedesignhive.tech';
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -31,18 +30,7 @@ export const ProfileEditor = ({  onClose, onUpdated }: ProfileEditorProps) => {
           return;
         }
 
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-
-        const profile = await response.json();
+        const profile = await apiFetch(endpoints.auth.me);
         setFullName(profile.name || '');
         setPhone(profile.phone || '');
       } catch (error) {
@@ -53,7 +41,7 @@ export const ProfileEditor = ({  onClose, onUpdated }: ProfileEditorProps) => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [toast]);
 
   const handleSave = async () => {
     if (!fullName.trim()) {
@@ -71,22 +59,13 @@ export const ProfileEditor = ({  onClose, onUpdated }: ProfileEditorProps) => {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/auth/profile`, {
+      await apiFetch(endpoints.auth.profile, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           name: fullName.trim(),
           phone: phone.trim() || null
         })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
 
       toast({ title: 'Profile updated!' });
       onUpdated();

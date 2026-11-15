@@ -22,9 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { useInvoiceDownload } from '@/hooks/useInvoiceDownload';
-import axios from 'axios';
-
-const API = 'https://api.thedesignhive.tech/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface Customization {
   imageUrl?: string;
@@ -53,6 +51,7 @@ interface Order {
   tax: number;
   discount: number;
   total: number;
+  pay_on_delivery: number;
   shipping_address: {
     full_name: string;
     phone: string;
@@ -93,13 +92,11 @@ const OrdersHistory = () => {
       }
 
       try {
-        const res = await axios.get(`${API}/orders`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log('Orders response:', res.data);
-        setOrders(res.data || []);
+        const data = await apiFetch(endpoints.orders.list);
+        console.log('Orders response:', data);
+        setOrders(data || []);
       } catch (err: any) {
-        console.error('Fetch orders error:', err.response?.data || err);
+        console.error('Fetch orders error:', err);
       } finally {
         setLoading(false);
       }
@@ -234,6 +231,14 @@ const OrdersHistory = () => {
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           {format(new Date(order.created_at), 'MMM dd, yyyy')}
+                          {order.pay_on_delivery > 0 && (
+                            <>
+                              {' · '}
+                              <span className="text-accent font-medium">
+                                ₹{order.pay_on_delivery.toLocaleString('en-IN')} to pay on delivery
+                              </span>
+                            </>
+                          )}
                         </p>
                       </div>
 
@@ -281,6 +286,14 @@ const OrdersHistory = () => {
                                   {order.payment_status}
                                 </Badge>
                               </div>
+                              {order.pay_on_delivery > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">Pay on Delivery:</span>
+                                  <span className="font-semibold text-accent">
+                                    ₹{order.pay_on_delivery.toLocaleString('en-IN')}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

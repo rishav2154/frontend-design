@@ -15,7 +15,7 @@ import { Loader2, Eye, Package, Download, FileText, User } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
@@ -41,6 +41,7 @@ interface Order {
   shipping_charge: number;
   discount: number;
   final_amount: number;
+  pay_on_delivery: number;
   address: string; // JSON string from backend
   customer_name: string;
   customer_phone: string;
@@ -71,7 +72,7 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const data = await apiFetch('/admin/orders');
+      const data = await apiFetch(endpoints.admin.orders);
       console.log('🔍 RAW ORDERS:', data);
 
       // ✅ Process backend response - address is JSON string
@@ -90,6 +91,7 @@ const AdminOrders = () => {
         shipping_charge: Number(order?.shipping_charge) || 0,
         discount: Number(order?.discount) || 0,
         final_amount: Number(order?.final_amount) || 0,
+        pay_on_delivery: Number(order?.pay_on_delivery) || 0,
         address: order?.address || '{}',
         customer_name: order?.customer_name || 'Customer',
         customer_phone: order?.customer_phone || 'N/A',
@@ -129,8 +131,9 @@ const AdminOrders = () => {
   // ✅ Status update
   const handleStatusChange = async (orderId: string, status: string) => {
     try {
-      await apiFetch(`/admin/orders/${orderId}/status`, {
-        method: 'PUT',
+      await apiFetch(endpoints.admin.orderStatus, {
+        args: [orderId],
+        method: 'PATCH',
         body: JSON.stringify({ status }),
       });
       toast({ title: '✅ Status Updated!' });
@@ -145,7 +148,7 @@ const AdminOrders = () => {
     setSelectedOrder(order);
     setItemsLoading(true);
     try {
-      const items = await apiFetch(`/admin/orders/${order.id}/items`);
+      const items = await apiFetch(endpoints.admin.orderItems, { args: [order.id] });
       setOrderItems(Array.isArray(items) ? items : []);
     } catch (e: any) {
       toast({ title: 'Error', description: 'Failed to load order details', variant: 'destructive' });
@@ -237,6 +240,11 @@ const AdminOrders = () => {
                         </TableCell>
                         <TableCell className="font-mono font-semibold text-lg text-right">
                           {formatCurrency(order.final_amount)}
+                          {order.pay_on_delivery > 0 && (
+                            <div className="text-xs font-normal text-amber-600 mt-1">
+                              {formatCurrency(order.pay_on_delivery)} on delivery
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge 
@@ -399,6 +407,14 @@ const AdminOrders = () => {
                   <div className="bg-muted/50 p-4 rounded-xl text-sm space-y-2">
                     <div>Method: <Badge>{selectedOrder?.payment_method.toUpperCase()}</Badge></div>
                     <div>Status: <Badge variant={selectedOrder?.payment_status === 'paid' ? 'default' : 'secondary'}>{selectedOrder?.payment_status}</Badge></div>
+                    {(selectedOrder?.pay_on_delivery || 0) > 0 && (
+                      <div>
+                        Pay on Delivery:{' '}
+                        <span className="font-semibold text-amber-600">
+                          {formatCurrency(selectedOrder?.pay_on_delivery)}
+                        </span>
+                      </div>
+                    )}
                     {selectedOrder?.razorpay_payment_id && (
                       <div>ID: {selectedOrder.razorpay_payment_id}</div>
                     )}

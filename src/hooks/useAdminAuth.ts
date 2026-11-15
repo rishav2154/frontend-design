@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface User {
   id: string;
@@ -16,7 +16,7 @@ export const useAdminAuth = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const data = await apiFetch<User>('/api/auth/me');
+        const data = await apiFetch<User>(endpoints.auth.me);
 
         setUser(data);
         setIsAdmin(data.role === 'admin');

@@ -1,24 +1,56 @@
-// src/lib/api.ts
+/**
+ * Centralized API client.
+ *
+ * All HTTP calls should go through `apiFetch` (JSON), `apiUpload` (multipart),
+ * or `apiRaw` (non-JSON text/html). Endpoints are referenced exclusively from
+ * `@/lib/endpoints` — never hardcode paths here.
+ */
 
-const BASE_URL = "https://api.thedesignhive.tech";
+import { API_BASE, type Endpoint, resolveEndpoint } from "./endpoints";
+
+export { endpoints, API_BASE, API_VERSION, resolveEndpoint } from "./endpoints";
 
 interface ApiOptions extends RequestInit {
-  token?: string;
+  /** Arguments for a parameterized endpoint function (e.g. `{ args: [id] }`). */
+  args?: any[];
+  /** Skip injecting the Authorization header (default: inject if token exists). */
+  skipAuth?: boolean;
 }
 
+const getToken = (): string | null => localStorage.getItem("token");
+
+const buildUrl = (endpoint: Endpoint, args: any[] = []): string =>
+  `${API_BASE}${resolveEndpoint(endpoint, args)}`;
+
+const authHeaders = (skipAuth?: boolean): HeadersInit => {
+  const token = getToken();
+  return !skipAuth && token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+/**
+ * JSON API request.
+ *
+ * @param endpoint - A static path string or an endpoint function from `endpoints`.
+ * @param options  - Standard RequestInit plus `args` (for parameterized
+ *                   endpoints) and `skipAuth`.
+ *
+ * Examples:
+ *   apiFetch(endpoints.auth.login, { method: "POST", body: JSON.stringify(data) })
+ *   apiFetch(endpoints.products.detail, { args: [id] })
+ */
 export const apiFetch = async <T = any>(
-  endpoint: string,
+  endpoint: Endpoint,
   options: ApiOptions = {}
 ): Promise<T> => {
-  const token = localStorage.getItem("token"); // JWT from login
+  const { args, skipAuth, headers, ...rest } = options;
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+  const res = await fetch(buildUrl(endpoint, args), {
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...authHeaders(skipAuth),
+      ...headers,
     },
-    ...options,
+    ...rest,
   });
 
   if (!res.ok) {
@@ -29,74 +61,57 @@ export const apiFetch = async <T = any>(
   return res.json();
 };
 
-/* ================= AUTH HELPERS ================= */
+/**
+ * Multipart form upload (e.g. images). Does NOT set Content-Type so the
+ * browser can add the multipart boundary.
+ */
+export const apiUpload = async <T = any>(
+  endpoint: Endpoint,
+  formData: FormData,
+  options: ApiOptions = {}
+): Promise<T> => {
+  const { args, skipAuth, headers, ...rest } = options;
 
-export const apiAuth = {
-  login: (email: string, password: string) =>
-    apiFetch("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
+  const res = await fetch(buildUrl(endpoint, args), {
+    method: "POST",
+    headers: {
+      ...authHeaders(skipAuth),
+      ...headers,
+    },
+    body: formData,
+    ...rest,
+  });
 
-  register: (data: any) =>
-    apiFetch("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Upload failed");
+  }
 
-  getMe: () => apiFetch("/auth/me"),
-
-  logout: () => {
-    localStorage.removeItem("token");
-  },
+  return res.json();
 };
 
-/* ================= ADMIN HELPERS ================= */
+/**
+ * Raw response request for non-JSON endpoints (e.g. invoice HTML).
+ * Returns the plain text body.
+ */
+export const apiRaw = async (
+  endpoint: Endpoint,
+  options: ApiOptions = {}
+): Promise<string> => {
+  const { args, skipAuth, headers, ...rest } = options;
 
-export const apiAdmin = {
-  getOrders: () => apiFetch("/admin/orders"),
-  updateOrderStatus: (id: string, status: string) =>
-    apiFetch(`/admin/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    }),
+  const res = await fetch(buildUrl(endpoint, args), {
+    headers: {
+      ...authHeaders(skipAuth),
+      ...headers,
+    },
+    ...rest,
+  });
 
-  getCoupons: () => apiFetch("/admin/coupons"),
-  createCoupon: (data: any) =>
-    apiFetch("/admin/coupons", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-  updateCoupon: (id: string, data: any) =>
-    apiFetch(`/admin/coupons/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-  deleteCoupon: (id: string) =>
-    apiFetch(`/admin/coupons/${id}`, { method: "DELETE" }),
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "API Error");
+  }
 
-  getUsers: () => apiFetch("/admin/users"),
-  toggleAdmin: (userId: string) =>
-    apiFetch(`/admin/users/${userId}/toggle-admin`, {
-      method: "PATCH",
-    }),
-};
-
-/* ================= SHOP HELPERS ================= */
-
-export const apiShop = {
-  getProducts: () => apiFetch("/products"),
-  getProduct: (id: string) => apiFetch(`/products/${id}`),
-
-  applyCoupon: (code: string, subtotal: number) =>
-    apiFetch("/coupons/apply", {
-      method: "POST",
-      body: JSON.stringify({ code, subtotal }),
-    }),
-
-  createOrder: (data: any) =>
-    apiFetch("/orders", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  return res.text();
 };

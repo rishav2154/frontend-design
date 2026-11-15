@@ -12,6 +12,7 @@ import {
   User, Package, Heart, LogOut, ChevronRight,
   Mail, Phone, Shield, Loader2, ShoppingBag, Pencil
 } from 'lucide-react';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface UserProfile {
   id: string;
@@ -29,8 +30,6 @@ const Account = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.thedesignhive.tech';
-
   const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
@@ -42,30 +41,19 @@ const Account = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-        }
-        setUser(null);
-        return;
-      }
-
-      const profile = await response.json();
+      const profile = await apiFetch(endpoints.auth.me);
       setUser(profile);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch profile error:', err);
+      if (err?.message && err.message.includes('401')) {
+        localStorage.removeItem('token');
+      }
       localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, [API_BASE]);
+  }, []);
 
   useEffect(() => {
     fetchUserProfile();

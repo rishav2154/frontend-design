@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingCart, DollarSign, Users, Tag, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const API = 'https://api.thedesignhive.tech/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface DashboardStats {
   totalOrders: number;
@@ -37,24 +35,20 @@ const AdminDashboard = () => {
 
     const fetchDashboard = async () => {
       try {
-        const res = await axios.get(`${API}/admin/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res: any = await apiFetch(endpoints.admin.dashboard);
 
         setStats({
-          totalOrders: res.data.totalOrders,
-          totalRevenue: res.data.totalRevenue,
-          totalUsers: res.data.totalUsers,
-          activeCoupons: res.data.activeCoupons,
-          pendingOrders: res.data.pendingOrders,
+          totalOrders: res.totalOrders,
+          totalRevenue: res.totalRevenue,
+          totalUsers: res.totalUsers,
+          activeCoupons: res.activeCoupons,
+          pendingOrders: res.pendingOrders,
         });
 
-        setRecentOrders(res.data.recentOrders || []);
+        setRecentOrders(res.recentOrders || []);
       } catch (err: any) {
         console.error(err);
-        if (err.response?.status === 401) {
+        if (err?.message && err.message.includes('401')) {
           navigate('/auth');
         }
       } finally {

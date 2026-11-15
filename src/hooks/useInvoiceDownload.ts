@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-const API = 'https://api.thedesignhive.tech/api';
+import { apiRaw, endpoints } from '@/lib/api';
 
 export function useInvoiceDownload() {
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -9,19 +8,7 @@ export function useInvoiceDownload() {
     setDownloading(orderId);
 
     try {
-      const token = localStorage.getItem('token');
-
-      const res = await fetch(`${API}/orders/${orderId}/invoice`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error('Invoice not available');
-      }
-
-      const html = await res.text();
+      const html = await apiRaw(endpoints.orders.invoice, { args: [orderId] });
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
 

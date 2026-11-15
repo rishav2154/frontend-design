@@ -5,7 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CheckCircle, Package, Truck, Home, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, endpoints } from "@/lib/api";
 
 interface Order {
   id: string;
@@ -46,7 +46,7 @@ const OrderSuccess = () => {
 
     const fetchOrder = async () => {
       try {
-        const data = await apiFetch(`/api/orders/${orderId}`);
+        const data = await apiFetch(endpoints.orders.detail, { args: [orderId] });
         setOrder(data);
       } catch {
         navigate("/");

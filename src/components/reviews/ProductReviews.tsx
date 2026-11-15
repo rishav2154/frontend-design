@@ -2,11 +2,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Star, MessageSquare } from 'lucide-react';
-import axios from 'axios';
+import { apiFetch, endpoints } from '@/lib/api';
 import { ReviewCard } from './ReviewCard';
 import { ReviewForm } from './ReviewForm';
-
-const API = 'https://api.thedesignhive.tech/api';
 
 interface Review {
   id: string;
@@ -29,11 +27,11 @@ export const ProductReviews = ({ productId }: { productId: string }) => {
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API}/products/${productId}/reviews`);
+      const res: any = await apiFetch(endpoints.products.reviews, { args: [productId] });
       
       // Handle both old (array) and new (object with reviews array) backend formats
-      const reviewData = Array.isArray(res.data.reviews) ? res.data.reviews : 
-                        Array.isArray(res.data) ? res.data : [];
+      const reviewData = Array.isArray(res.reviews) ? res.reviews : 
+                        Array.isArray(res) ? res : [];
       
       // Normalize verified_purchase field (backend returns 0/1 or true/false)
       const normalizedReviews = reviewData.map((review: any) => ({
@@ -61,7 +59,10 @@ export const ProductReviews = ({ productId }: { productId: string }) => {
 
   const handleHelpful = useCallback(async (reviewId: string) => {
     try {
-      await axios.patch(`${API}/reviews/${reviewId}/helpful`);
+      await apiFetch(endpoints.reviews.helpful, {
+        args: [reviewId],
+        method: 'PATCH',
+      });
       setReviews(prev => prev.map(r => 
         r.id === reviewId 
           ? { ...r, helpful_count: r.helpful_count + 1 }
@@ -157,7 +158,7 @@ export const ProductReviews = ({ productId }: { productId: string }) => {
             reviews.map((review) => (
               <ReviewCard 
                 key={review.id} 
-                review={review} 
+                review={review as any}
                 onHelpful={handleHelpful} 
               />
             ))

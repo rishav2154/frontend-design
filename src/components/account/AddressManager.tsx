@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Pencil, Trash2, X, MapPin, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface Address {
   id: string;
@@ -39,36 +40,12 @@ export const AddressManager = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.thedesignhive.tech';
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    };
-  };
-
   /* ================= FETCH ADDRESSES ================= */
   const fetchAddresses = async () => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_BASE}/api/addresses`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.status === 401) {
-        throw new Error('Unauthorized. Please login again.');
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch addresses');
-      }
-
-      const data = await response.json();
+      const data = await apiFetch(endpoints.addresses.list);
       setAddresses(data);
     } catch (err: any) {
       console.error('Fetch addresses error:', err);
@@ -136,25 +113,20 @@ export const AddressManager = () => {
     setSaving(true);
 
     try {
-      const url = editingId
-        ? `${API_BASE}/api/addresses/${editingId}`
-        : `${API_BASE}/api/addresses`;
-
+      const endpoint = editingId
+        ? endpoints.addresses.detail
+        : endpoints.addresses.create;
+      const args = editingId ? [editingId] : [];
       const method = editingId ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      await apiFetch(endpoint, {
+        args,
         method,
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...form,
           address_line2: form.address_line2 || null,
         }),
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save address');
-      }
 
       toast({
         title: editingId ? 'Address updated!' : 'Address added!',
@@ -182,15 +154,10 @@ export const AddressManager = () => {
     setDeletingId(id);
 
     try {
-      const response = await fetch(`${API_BASE}/api/addresses/${id}`, {
+      await apiFetch(endpoints.addresses.detail, {
+        args: [id],
         method: 'DELETE',
-        headers: getAuthHeaders(),
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete address');
-      }
 
       toast({ title: 'Address deleted' });
       fetchAddresses();
@@ -210,17 +177,10 @@ export const AddressManager = () => {
 
   const handleSetDefault = async (id: string) => {
     try {
-      const response = await fetch(
-        `${API_BASE}/api/addresses/${id}/default`,
-        {
-          method: 'PATCH',
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to update default address');
-      }
+      await apiFetch(endpoints.addresses.setDefault, {
+        args: [id],
+        method: 'PATCH',
+      });
 
       toast({ title: 'Default address updated' });
       fetchAddresses();

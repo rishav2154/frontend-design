@@ -13,7 +13,7 @@ import {
   UserCog, Mail, Phone, Calendar, Zap 
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -44,7 +44,7 @@ export default function AdminUsers() {
   // Fetch users
   const fetchUsers = async () => {
     try {
-      const data = await apiFetch('/api/admin/users');
+      const data = await apiFetch(endpoints.admin.users);
       setUsers(data);
       
       // Calculate stats
@@ -75,7 +75,8 @@ export default function AdminUsers() {
 
   const toggleAdmin = async (userId: string) => {
     try {
-      await apiFetch(`/api/admin/users/${userId}/toggle-admin`, {
+      await apiFetch(endpoints.admin.userToggleAdmin, {
+        args: [userId],
         method: 'PATCH',
       });
       toast({ 

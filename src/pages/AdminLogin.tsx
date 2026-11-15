@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, endpoints } from "@/lib/api";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -28,12 +28,12 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await apiFetch("/api/admin/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiFetch(endpoints.admin.login, {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
 
-      localStorage.setItem("adminToken", res.token);
+      localStorage.setItem("adminToken", data.token);
 
       toast({
         title: "Welcome Admin!",
@@ -41,6 +41,7 @@ const AdminLogin = () => {
       });
 
       navigate("/admin");
+      
     } catch (error: any) {
       toast({
         title: "Access Denied",

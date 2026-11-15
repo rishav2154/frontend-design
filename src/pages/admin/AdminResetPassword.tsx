@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Eye, EyeOff, Loader2, Shield, CheckCircle } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 const AdminResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -54,7 +54,7 @@ const AdminResetPassword = () => {
     try {
       setLoading(true);
 
-      await apiFetch('/admin/reset-password', {
+      await apiFetch(endpoints.admin.resetPassword, {
         method: 'POST',
         body: JSON.stringify({ token, password }),
       });

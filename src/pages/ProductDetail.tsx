@@ -15,7 +15,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore, WishlistItem } from '@/store/wishlistStore';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductReviews } from '@/components/reviews/ProductReviews';
-import axios from 'axios';
+import { apiUpload, endpoints } from '@/lib/api';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,18 +79,12 @@ const ProductDetail = () => {
 
     const formData = new FormData();
     formData.append('image', file);
-    const token = localStorage.getItem('token');
 
     setUploading(true);
     try {
-      const res = await axios.post(`https://api.thedesignhive.tech/api/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const res: any = await apiUpload(endpoints.upload, formData);
 
-      const uploadedUrl = res.data.imageUrl;
+      const uploadedUrl = res.imageUrl;
       setImageUrl(uploadedUrl);
       setUploadedImage(uploadedUrl);
       toast({ title: 'Image uploaded successfully' });

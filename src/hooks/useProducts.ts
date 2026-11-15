@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, endpoints } from "@/lib/api";
 
 /* ================= PRODUCT TYPE ================= */
 
@@ -139,7 +139,7 @@ export const useProducts = (category?: string) => {
   return useQuery({
     queryKey: ["products", category],
     queryFn: async () => {
-      const data = await apiFetch("/api/products");
+      const data = await apiFetch(endpoints.products.list);
       const products = (data || []).map(mapDbProductToFrontend);
 
       if (category) {
@@ -157,7 +157,7 @@ export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ["featured-products"],
     queryFn: async () => {
-      const data = await apiFetch("/api/products");
+      const data = await apiFetch(endpoints.products.list);
       return (data || [])
         .slice(0, 8)
         .map(mapDbProductToFrontend);
@@ -171,7 +171,7 @@ export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const data = await apiFetch(`/api/products/${id}`);
+      const data = await apiFetch(endpoints.products.detail, { args: [id] });
       if (!data) return null;
       return mapDbProductToFrontend(data);
     },

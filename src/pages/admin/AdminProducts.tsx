@@ -2,7 +2,6 @@
 // ✅ All bugs fixed: images array sync, payload, form population, reset, etc.
 
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -27,8 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Loader2, Upload, X, Package, Image as ImageIcon } from 'lucide-react';
-
-const API = 'https://api.thedesignhive.tech/api';
+import { apiFetch, apiUpload, endpoints } from '@/lib/api';
 
 interface Product {
   id: string;
@@ -91,14 +89,12 @@ const AdminProducts = () => {
   /* ================= FETCH PRODUCTS ================= */
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(`${API}/admin/products`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProducts(res.data);
+      const data = await apiFetch(endpoints.admin.products);
+      setProducts(data);
     } catch (err: any) {
       toast({ 
         title: 'Error', 
-        description: err.response?.data?.error || err.message, 
+        description: err.message, 
         variant: 'destructive' 
       });
     } finally {
@@ -120,8 +116,8 @@ const AdminProducts = () => {
     formData.append("image", file);
 
     try {
-      const res = await axios.post(`${API}/upload`, formData);
-      const newImageUrl = res.data.imageUrl;
+      const res: any = await apiUpload(endpoints.upload, formData);
+      const newImageUrl = res.imageUrl;
       
       // ✅ FIXED: Set BOTH states correctly
       setImageUrl(newImageUrl);           // For preview
@@ -171,13 +167,16 @@ const AdminProducts = () => {
 
     try {
       if (editingProduct) {
-        await axios.put(`${API}/admin/products/${editingProduct.id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+        await apiFetch(endpoints.admin.product, {
+          args: [editingProduct.id],
+          method: 'PUT',
+          body: JSON.stringify(payload),
         });
         toast({ title: 'Product updated successfully' });
       } else {
-        await axios.post(`${API}/admin/products`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+        await apiFetch(endpoints.admin.products, {
+          method: 'POST',
+          body: JSON.stringify(payload),
         });
         toast({ title: 'Product created successfully' });
       }
@@ -187,7 +186,7 @@ const AdminProducts = () => {
     } catch (err: any) {
       toast({ 
         title: 'Error', 
-        description: err.response?.data?.error || err.response?.data?.message || err.message, 
+        description: err.message, 
         variant: 'destructive' 
       });
     } finally {
@@ -200,13 +199,14 @@ const AdminProducts = () => {
     if (!productToDelete) return;
 
     try {
-      await axios.delete(`${API}/admin/products/${productToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await apiFetch(endpoints.admin.product, {
+        args: [productToDelete.id],
+        method: 'DELETE',
       });
       toast({ title: 'Product deleted successfully' });
       fetchProducts();
     } catch (err: any) {
-      toast({ title: 'Error', description: err.response?.data?.error || err.message, variant: 'destructive' });
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setDeleteDialogOpen(false);
       setProductToDelete(null);
@@ -216,11 +216,11 @@ const AdminProducts = () => {
   /* ================= STATUS TOGGLE ================= */
   const toggleStatus = async (product: Product) => {
     try {
-      await axios.patch(
-        `${API}/admin/products/${product.id}/status`,
-        { is_active: !product.is_active },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiFetch(endpoints.admin.productStatus, {
+        args: [product.id],
+        method: 'PATCH',
+        body: JSON.stringify({ is_active: !product.is_active }),
+      });
       fetchProducts();
       toast({ title: 'Status updated' });
     } catch (err: any) {

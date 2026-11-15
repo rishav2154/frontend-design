@@ -60,6 +60,41 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Google sign-in setup
+
+The login and sign-up forms use the Google Identity Services authorization-code
+popup. Both send the code to the existing API and store the returned application
+JWT, just like email login.
+
+1. Create a **Web application** OAuth client in Google Cloud and configure the
+   consent screen. Add the frontend origins (for example `http://localhost:8080`
+   and your production origin) to **Authorized JavaScript origins**.
+2. Set `VITE_GOOGLE_CLIENT_ID` in `.env.local` to the public client ID. Optionally
+   set `VITE_API_URL` to the backend origin. See `.env.example`. Restart Vite after
+   changing environment variables. Never put the Google client secret in a Vite
+   environment variable.
+3. Implement `POST /api/auth/google` on the backend with the following contract:
+
+   ```json
+   { "code": "google-authorization-code", "redirectUri": "https://your-frontend.example" }
+   ```
+
+   Exchange the one-time code with Google using the server-side client ID and
+   secret. For this popup flow, the exchange's `redirect_uri` is the frontend
+   origin. Validate `redirectUri` against your configured frontend origins before
+   using it; configure CORS for those origins as well. Verify the returned Google
+   ID token's signature, issuer, audience, expiry, and verified-email claim.
+   Identify Google users by the token's `sub`; create a customer when needed and
+   use the backend's secure account-linking policy for existing email accounts.
+   Do not grant administrator access during signup.
+4. Return `{ "token": "your-application-jwt" }`. That JWT must work with the
+   existing `/api/auth/me`, profile, checkout, and order endpoints.
+
+The backend is maintained outside this repository. Its endpoint and Google
+configuration must be deployed before Google sign-in can succeed. Missing
+configuration, blocked or closed popups, and API failures show an error and allow
+the customer to retry or continue with email.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, X, Loader2, Check } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch, endpoints } from '@/lib/api';
 
 export const CouponInput = () => {
   const [code, setCode] = useState('');
@@ -32,15 +33,9 @@ export const CouponInput = () => {
 
     try {
       // ✅ FIXED: Match backend route /coupons/validate/:code
-     const res = await fetch(
-  `https://api.thedesignhive.tech/coupons/validate/${code.toUpperCase().trim()}` );
-
-
-      if (!res.ok) {
-        throw new Error('Invalid coupon');
-      }
-
-      const coupon = await res.json();
+      const coupon = await apiFetch(endpoints.coupons.validate, {
+        args: [code.toUpperCase().trim()],
+      });
 
       const now = new Date();
 

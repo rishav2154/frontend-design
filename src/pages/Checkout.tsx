@@ -1,4 +1,4 @@
-// Checkout.tsx (FULL FIXED WITH RAZORPAY + OTP + COD, UI UNCHANGED)
+// Checkout.tsx (FULL FIXED WITH RAZORPAY + OTP, UI UNCHANGED)
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, endpoints } from "@/lib/api";
 import { BookMarked, Check } from "lucide-react";
 
 declare global {
@@ -34,9 +34,13 @@ const Checkout = () => {
   } = useCartStore();
 
 
-  const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("online");
+
+  // Temporary OTP bypass: set VITE_OTP_VERIFICATION_REQUIRED=false to let
+  // customers order with just their phone number, without verification.
+  const otpRequired =
+    import.meta.env.VITE_OTP_VERIFICATION_REQUIRED !== "false";
 
   // OTP states
   const [otpSent, setOtpSent] = useState(false);
@@ -79,7 +83,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
-        const res = await apiFetch("/api/addresses");
+        const res = await apiFetch(endpoints.addresses.list);
         setSavedAddresses(res || []);
 
         const defaultAddr = res?.find((a: any) => a.is_default === 1);
@@ -186,7 +190,7 @@ const Checkout = () => {
 
     try {
 
-      await apiFetch("/api/send-otp", {
+      await apiFetch(endpoints.checkout.sendOtp, {
 
         method: "POST",
 
@@ -237,7 +241,7 @@ const Checkout = () => {
 
     try {
 
-      await apiFetch("/api/verify-otp", {
+      await apiFetch(endpoints.checkout.verifyOtp, {
 
         method: "POST",
 
@@ -288,10 +292,28 @@ const Checkout = () => {
     });
   };
   /* ===============================
-     ONLINE PAYMENT (RAZORPAY)
+     RAZORPAY CHECKOUT (ONLINE / PARTIAL)
   =============================== */
 
-  const handleOnlinePayment = async () => {
+  const PARTIAL_PREPAID_PERCENT = 50;
+
+  const computeFinalAmount = () => {
+
+    const shipping = 50;
+
+    const tax = Number((subtotal * 0.08).toFixed(2));
+
+    const discount = appliedCoupon
+      ? Number(appliedCoupon.discount || 0)
+      : 0;
+
+    return Number(
+      (subtotal + shipping + tax - discount).toFixed(2)
+    );
+
+  };
+
+  const handleRazorpayPayment = async (mode: "online" | "partial") => {
 
     const loaded =
       await loadRazorpay();
@@ -309,22 +331,15 @@ const Checkout = () => {
 
     try {
       /* ===============================
-         CALCULATE FINAL AMOUNT
+         CALCULATE PAYABLE AMOUNT
+         partial = 50% advance, rest on delivery
       ================================ */
 
-      const shipping = 50;
+      const finalAmount = computeFinalAmount();
 
-      const tax = Number((subtotal * 0.08).toFixed(2));
-
-      let discount = 0;
-
-      if (appliedCoupon) {
-        discount = Number(appliedCoupon.discount || 0);
-      }
-
-      const finalAmount = Number(
-        (subtotal + shipping + tax - discount).toFixed(2)
-      );
+      const payableAmount = mode === "partial"
+        ? Number((finalAmount * PARTIAL_PREPAID_PERCENT / 100).toFixed(2))
+        : finalAmount;
 
 
       /* ===============================
@@ -332,10 +347,10 @@ const Checkout = () => {
       ================================ */
 
       const razorpayOrder =
-        await apiFetch("/api/create-razorpay-order", {
+        await apiFetch(endpoints.checkout.createRazorpayOrder, {
           method: "POST",
           body: JSON.stringify({
-            amount: finalAmount   // ✅ FIXED
+            amount: payableAmount
           })
         });
 
@@ -353,7 +368,9 @@ const Checkout = () => {
 
         name: "Your Store",
 
-        description: "Order Payment",
+        description: mode === "partial"
+          ? "Partial Payment (50% advance)"
+          : "Order Payment",
 
         prefill: {
           name: address.fullName,
@@ -372,12 +389,12 @@ const Checkout = () => {
         handler: async (response: any) => {
           try {
 
-            await apiFetch("/api/verify-payment", {
+            await apiFetch(endpoints.checkout.verifyPayment, {
               method: "POST",
               body: JSON.stringify(response)
             });
 
-            const res = await apiFetch("/api/checkout", {
+            const res = await apiFetch(endpoints.checkout.checkout, {
               method: "POST",
               body: JSON.stringify({
                 items,
@@ -391,7 +408,7 @@ const Checkout = () => {
                   pincode: address.pincode
                 },
                 coupon: appliedCoupon?.code || null,
-                payment_method: "online",
+                payment_method: mode,
                 payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature
@@ -444,7 +461,7 @@ const Checkout = () => {
 
     if (!validateForm()) return;
 
-    if (!phoneVerified)
+    if (otpRequired && !phoneVerified)
       return toast({
         title: "Phone Not Verified",
         description: "Verify phone first",
@@ -453,84 +470,10 @@ const Checkout = () => {
 
 
     if (paymentMethod === "online")
-      return handleOnlinePayment();
+      return handleRazorpayPayment("online");
 
-
-    // COD FLOW
-
-    setLoading(true);
-
-    try {
-
-      const res =
-        await apiFetch("/api/checkout", {
-
-          method: "POST",
-
-          body: JSON.stringify({
-
-            items,
-
-            shipping_address: {
-
-              full_name:
-                address.fullName,
-
-              phone:
-                address.phone,
-
-              address_line1:
-                address.addressLine1,
-
-              address_line2:
-                address.addressLine2,
-
-              city:
-                address.city,
-
-              state:
-                address.state,
-
-              pincode:
-                address.pincode
-
-            },
-
-            coupon:
-              appliedCoupon?.code || null,
-
-            payment_method: "cod"
-
-          })
-
-        });
-
-
-      clearCart();
-
-      navigate(
-        `/order-success/${res.order_id}`
-      );
-
-    }
-    catch (err: any) {
-
-      toast({
-
-        title: "Order Failed",
-
-        description: err.message,
-
-        variant: "destructive"
-
-      });
-
-    }
-    finally {
-
-      setLoading(false);
-
-    }
+    if (paymentMethod === "partial")
+      return handleRazorpayPayment("partial");
 
   };
 
@@ -706,7 +649,7 @@ const Checkout = () => {
                 />
 
 
-                {!phoneVerified && (
+                {otpRequired && !phoneVerified && (
 
                   <Button
                     type="button"
@@ -728,7 +671,7 @@ const Checkout = () => {
 
 
 
-              {otpSent && !phoneVerified && (
+              {otpRequired && otpSent && !phoneVerified && (
 
                 <div className="flex gap-2 mt-2">
 
@@ -758,6 +701,15 @@ const Checkout = () => {
 
                 <p className="text-green-600 text-sm mt-2 font-medium">
                   ✓ Phone verified successfully
+                </p>
+
+              )}
+
+
+              {!otpRequired && (
+
+                <p className="text-muted-foreground text-sm mt-2">
+                  Phone verification is temporarily disabled.
                 </p>
 
               )}
@@ -824,37 +776,6 @@ const Checkout = () => {
               >
 
 
-                {/* COD */}
-
-                <label className={`flex items-center justify-between border rounded-xl p-4 cursor-pointer transition
-
-${paymentMethod === "cod"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:bg-muted/30"
-                  }`}>
-
-                  <div className="flex items-center gap-3">
-
-                    <RadioGroupItem value="cod" />
-
-                    <div>
-
-                      <p className="font-medium">
-                        Cash on Delivery
-                      </p>
-
-                      <p className="text-sm text-muted-foreground">
-                        Pay when product arrives
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </label>
-
-
-
                 {/* ONLINE */}
 
                 <label className={`flex items-center justify-between border rounded-xl p-4 cursor-pointer transition
@@ -876,6 +797,37 @@ ${paymentMethod === "online"
 
                       <p className="text-sm text-muted-foreground">
                         Secure payment via Razorpay
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </label>
+
+
+
+                {/* PARTIAL (50% now + 50% COD) */}
+
+                <label className={`flex items-center justify-between border rounded-xl p-4 cursor-pointer transition
+
+${paymentMethod === "partial"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/30"
+                  }`}>
+
+                  <div className="flex items-center gap-3">
+
+                    <RadioGroupItem value="partial" />
+
+                    <div>
+
+                      <p className="font-medium">
+                        Pay 50% Now, 50% on Delivery
+                      </p>
+
+                      <p className="text-sm text-muted-foreground">
+                        Pay half online now, rest as cash on delivery
                       </p>
 
                     </div>
@@ -944,14 +896,11 @@ ${paymentMethod === "online"
               </div>
               <Button
                 onClick={handlePlaceOrder}
-                disabled={loading}
                 className="w-full mt-6 h-12 text-base font-semibold"
               >
-                {loading
-                  ? <Loader2 className="animate-spin" />
-                  : paymentMethod === "online"
-                    ? "Pay & Place Order"
-                    : "Place Order"}
+                {paymentMethod === "partial"
+                  ? "Pay 50% & Place Order"
+                  : "Pay & Place Order"}
 
               </Button>
             </div>

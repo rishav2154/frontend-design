@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, endpoints } from "@/lib/api";
+import { loadGoogleAuth, requestGoogleCode } from "@/lib/googleAuth";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +17,8 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const busy = loading || googleLoading;
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,14 +29,54 @@ const Auth = () => {
     if (token) navigate("/");
   }, [navigate]);
 
+  useEffect(() => {
+    if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+      // Load before the click so the Google popup can use the user's interaction.
+      void loadGoogleAuth().catch(() => {});
+    }
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    if (busy) return;
+    setGoogleLoading(true);
+
+    try {
+      const code = await requestGoogleCode();
+      const res = await apiFetch<{ token: string }>(endpoints.auth.google, {
+        method: "POST",
+        body: JSON.stringify({ code, redirectUri: window.location.origin }),
+      });
+
+      if (typeof res.token !== "string" || !res.token.trim()) {
+        throw new Error("Google sign-in could not be completed. Please try again.");
+      }
+
+      localStorage.setItem("token", res.token);
+      toast({
+        title: "Welcome!",
+        description: "You have successfully signed in with Google.",
+      });
+      navigate("/");
+    } catch (error: unknown) {
+      toast({
+        title: "Google sign-in",
+        description: error instanceof Error ? error.message : "Unable to sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setLoading(true);
 
     try {
       if (isLogin) {
         /* ================= LOGIN ================= */
-        const res = await apiFetch("/api/auth/login", {
+        const res = await apiFetch(endpoints.auth.login, {
           method: "POST",
           body: JSON.stringify({ email, password }),
         });
@@ -47,7 +91,7 @@ const Auth = () => {
         navigate("/");
       } else {
         /* ================= REGISTER ================= */
-        await apiFetch("/api/auth/register", {
+        await apiFetch(endpoints.auth.register, {
           method: "POST",
           body: JSON.stringify({
             name: fullName,
@@ -63,10 +107,10 @@ const Auth = () => {
 
         setIsLogin(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unable to sign in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -89,6 +133,19 @@ const Auth = () => {
             <p className="text-muted-foreground mt-2">
               {isLogin ? "Welcome back!" : "Create your account"}
             </p>
+          </div>
+
+          <GoogleSignInButton
+            isLogin={isLogin}
+            loading={googleLoading}
+            disabled={busy}
+            onClick={handleGoogleSignIn}
+          />
+
+          <div className="relative my-6 flex items-center gap-4">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or continue with email</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -147,7 +204,7 @@ const Auth = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 btn-luxury" disabled={loading}>
+            <Button type="submit" className="w-full h-12 btn-luxury" disabled={busy}>
               {loading ? <Loader2 className="animate-spin" /> : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
@@ -155,8 +212,10 @@ const Auth = () => {
           <p className="text-center mt-6 text-sm text-muted-foreground">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
+              type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-accent font-medium"
+              disabled={busy}
+              className="text-accent font-medium disabled:opacity-50"
             >
               {isLogin ? "Sign up" : "Sign in"}
             </button>

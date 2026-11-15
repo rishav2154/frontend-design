@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch, endpoints } from '@/lib/api';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -27,9 +28,8 @@ export const AdminSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('https://api.thedesignhive.tech/api/admin/logout', {
+      await apiFetch(endpoints.admin.logout, {
         method: 'POST',
-        credentials: 'include',
       });
 
       localStorage.removeItem('adminToken');

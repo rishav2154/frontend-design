@@ -1,9 +1,7 @@
 // ReviewForm.tsx - Updated with black text, validation, better UX
-import axios from 'axios';
 import { useState, useCallback } from 'react';
 import { Star } from 'lucide-react';
-
-const API = 'https://api.thedesignhive.tech/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface ReviewFormProps {
   productId: string;
@@ -30,14 +28,14 @@ export const ReviewForm = ({ productId, onReviewSubmitted }: ReviewFormProps) =>
     setSubmitting(true);
     setError('');
     try {
-      await axios.post(
-        `${API}/products/${productId}/reviews`,
-        { rating, comment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiFetch(endpoints.products.reviews, {
+        args: [productId],
+        method: 'POST',
+        body: JSON.stringify({ rating, comment }),
+      });
       onReviewSubmitted();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit review');
+      setError(err.message || 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }

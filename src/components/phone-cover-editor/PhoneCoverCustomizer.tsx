@@ -11,10 +11,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartStore } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch, apiUpload, endpoints } from '@/lib/api';
 
 export function PhoneCoverCustomizer() {
-
-  const API = "https://api.thedesignhive.tech/api";
 
   const [uploading, setUploading] = useState(false);
 
@@ -47,11 +46,10 @@ export function PhoneCoverCustomizer() {
   // 🔥 LOAD BRANDS
   // ============================
   useEffect(() => {
-    fetch(`${API}/brands`)
-      .then(res => res.json())
-      .then(data => setBrands(data))
+    apiFetch(endpoints.phoneCover.brands)
+      .then(data => setBrands(data as any[]))
       .catch(() => toast({ title: "Failed to load brands", variant: "destructive" }));
-  }, []);
+  }, [toast]);
 
   // ============================
   // 🔥 LOAD MODELS
@@ -59,10 +57,9 @@ export function PhoneCoverCustomizer() {
   useEffect(() => {
     if (!selectedBrand) return;
 
-    fetch(`${API}/models/${selectedBrand}`)
-      .then(res => res.json())
+    apiFetch(endpoints.phoneCover.models, { args: [selectedBrand] })
       .then(data => {
-        setModels(data);
+        setModels(data as any[]);
         setSelectedModel('');
         setSelectedCoverType('');
       });
@@ -74,10 +71,9 @@ export function PhoneCoverCustomizer() {
   useEffect(() => {
     if (!selectedModel) return;
 
-    fetch(`${API}/cover-types/${selectedModel}`)
-      .then(res => res.json())
+    apiFetch(endpoints.phoneCover.coverTypes, { args: [selectedModel] })
       .then(data => {
-        setCoverTypes(data);
+        setCoverTypes(data as any[]);
         setSelectedCoverType('');
       });
   }, [selectedModel]);
@@ -115,15 +111,8 @@ export function PhoneCoverCustomizer() {
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const token = localStorage.getItem('token');
 
-      const res = await fetch(`${API}/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      const data = await res.json();
+      const data: any = await apiUpload(endpoints.upload, formData);
       setUploadedImage(data.imageUrl);
 
       toast({

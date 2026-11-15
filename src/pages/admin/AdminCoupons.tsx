@@ -19,7 +19,7 @@ import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 
 interface Coupon {
   id: string;
@@ -58,7 +58,7 @@ const AdminCoupons = () => {
 
   const fetchCoupons = async () => {
     try {
-      const data = await apiFetch('/api/admin/coupons');
+      const data = await apiFetch(endpoints.admin.coupons);
       setCoupons(data);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message });
@@ -96,13 +96,14 @@ const AdminCoupons = () => {
 
     try {
       if (editingCoupon) {
-        await apiFetch(`/api/admin/coupons/${editingCoupon.id}`, {
+        await apiFetch(endpoints.admin.coupon, {
+          args: [editingCoupon.id],
           method: 'PUT',
           body: JSON.stringify(payload),
         });
         toast({ title: 'Coupon updated' });
       } else {
-        await apiFetch('/api/admin/coupons', {
+        await apiFetch(endpoints.admin.coupons, {
           method: 'POST',
           body: JSON.stringify(payload),
         });
@@ -136,7 +137,8 @@ const AdminCoupons = () => {
   };
 
   const toggleActive = async (coupon: Coupon) => {
-    await apiFetch(`/api/admin/coupons/${coupon.id}/toggle`, {
+    await apiFetch(endpoints.admin.couponToggle, {
+      args: [coupon.id],
       method: 'PATCH',
     });
     fetchCoupons();
@@ -144,7 +146,7 @@ const AdminCoupons = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this coupon?')) return;
-    await apiFetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
+    await apiFetch(endpoints.admin.coupon, { args: [id], method: 'DELETE' });
     fetchCoupons();
   };
 

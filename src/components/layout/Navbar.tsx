@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Heart, Menu, X, Search, User, LogOut, Package, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, endpoints } from '@/lib/api';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SearchDialog } from '@/components/search/SearchDialog';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -49,7 +49,7 @@ export const Navbar = () => {
 
     const fetchUser = async () => {
       try {
-        const data = await apiFetch('/api/auth/me');
+        const data = await apiFetch(endpoints.auth.me);
         setUser(data);
       } catch {
         setUser(null);
