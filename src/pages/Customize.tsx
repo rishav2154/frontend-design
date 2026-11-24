@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, Type, Palette, RotateCcw, ShoppingBag, 
@@ -10,9 +10,24 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useCartStore } from '@/store/cartStore';
-import ProductViewer3D from '@/components/3d/ProductViewer3D';
 import { Slider } from '@/components/ui/slider';
-import { MugCustomizer } from '@/components/mug-editor';
+
+const ProductViewer3D = lazy(() => import('@/components/3d/ProductViewer3D'));
+const MugCustomizer = lazy(() =>
+  import('@/components/mug-editor/MugCustomizer').then((module) => ({
+    default: module.MugCustomizer,
+  })),
+);
+
+const EditorLoadingState = ({ compact = false }: { compact?: boolean }) => (
+  <div
+    className={`glass-card grid place-items-center rounded-3xl ${compact ? 'h-[340px] sm:min-h-[450px]' : 'min-h-[34rem]'}`}
+    role="status"
+    aria-label="Loading design preview"
+  >
+    <div className="h-12 w-12 animate-pulse rounded-full border border-accent/40 bg-accent/15" />
+  </div>
+);
 
 const productTypes = [
   { id: 'mug', name: 'Magic Cup', icon: Coffee, price: 349 },
@@ -152,12 +167,12 @@ const Customize = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Navbar />
       <CartDrawer />
 
       <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4 lg:px-8">
+        <div className="container mx-auto min-w-0 px-3 sm:px-4 lg:px-8">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -187,26 +202,28 @@ const Customize = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="lg:col-span-4"
+              className="min-w-0 lg:col-span-4"
             >
-              <MugCustomizer />
+              <Suspense fallback={<EditorLoadingState />}>
+                <MugCustomizer />
+              </Suspense>
             </motion.div>
           ) : (
           /* Original layout for other products */
           <>
-          <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-5 lg:gap-8">
             {/* Left Sidebar - Product Selection (hidden since already shown above) */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="lg:col-span-1"
+              className="min-w-0 lg:col-span-1"
             >
-              <div className="glass-card p-4 rounded-2xl sticky top-24">
+              <div className="glass-card rounded-2xl p-3 sm:p-4 lg:sticky lg:top-24">
                 <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">
                   Select Product
                 </h3>
-                <div className="space-y-2">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
                   {productTypes.map((product) => {
                     const Icon = product.icon;
                     return (
@@ -243,19 +260,21 @@ const Customize = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="lg:col-span-2"
+              className="min-w-0 lg:col-span-2"
             >
-              <div className="glass-card p-4 md:p-6 rounded-3xl">
-                <div className="aspect-square relative">
-                  <ProductViewer3D
-                    productType={selectedProduct}
-                    color={selectedColor}
-                    customImage={uploadedImage}
-                    customText={customText}
-                    textColor={textColor}
-                    fontFamily={selectedFont}
-                    imageTransform={imageTransform}
-                  />
+              <div className="glass-card min-w-0 rounded-3xl p-3 sm:p-4 md:p-6">
+                <div className="relative h-[340px] min-w-0 sm:h-auto sm:aspect-square">
+                  <Suspense fallback={<EditorLoadingState compact />}>
+                    <ProductViewer3D
+                      productType={selectedProduct}
+                      color={selectedColor}
+                      customImage={uploadedImage}
+                      customText={customText}
+                      textColor={textColor}
+                      fontFamily={selectedFont}
+                      imageTransform={imageTransform}
+                    />
+                  </Suspense>
                 </div>
                 
                 {/* Color Selection */}
@@ -278,6 +297,8 @@ const Customize = () => {
                         }`}
                         style={{ backgroundColor: color.value }}
                         title={color.name}
+                        aria-label={`Use ${color.name} product color`}
+                        aria-pressed={selectedColor === color.value}
                       >
                         {selectedColor === color.value && (
                           <Check className={`w-4 h-4 mx-auto ${color.value === '#ffffff' || color.value === '#ca8a04' ? 'text-black' : 'text-white'}`} />
@@ -294,10 +315,10 @@ const Customize = () => {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="lg:col-span-2 space-y-4"
+              className="min-w-0 space-y-4 lg:col-span-2"
             >
               {/* Image Upload */}
-              <div className="glass-card p-5 rounded-2xl">
+              <div className="glass-card min-w-0 rounded-2xl p-4 sm:p-5">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                   <Upload className="w-5 h-5 text-accent" />
                   Upload Your Photo
@@ -323,6 +344,8 @@ const Customize = () => {
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => fileInputRef.current?.click()}
+                          aria-label="Change uploaded image"
+                          title="Change uploaded image"
                           className="p-2 rounded-lg bg-accent text-accent-foreground"
                         >
                           <Upload className="w-4 h-4" />
@@ -331,6 +354,8 @@ const Customize = () => {
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={removeImage}
+                          aria-label="Remove uploaded image"
+                          title="Remove uploaded image"
                           className="p-2 rounded-lg bg-destructive text-destructive-foreground"
                         >
                           <X className="w-4 h-4" />
@@ -339,18 +364,18 @@ const Customize = () => {
                     </div>
                     
                     {/* Image Position Controls */}
-                    <div className="space-y-4 p-4 bg-muted/30 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="space-y-4 rounded-xl bg-muted/30 p-3 sm:p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-sm font-medium flex items-center gap-2">
                           <Move className="w-4 h-4 text-accent" />
                           Image Controls
                         </span>
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {(['position', 'scale', 'rotation'] as const).map((control) => (
                             <button
                               key={control}
                               onClick={() => setActiveControl(control)}
-                              className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+                              className={`flex min-h-10 items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all ${
                                 activeControl === control 
                                   ? 'bg-accent text-accent-foreground' 
                                   : 'bg-muted hover:bg-muted/80'
@@ -359,6 +384,7 @@ const Customize = () => {
                               {control === 'position' && <Move className="w-3 h-3" />}
                               {control === 'scale' && <ZoomIn className="w-3 h-3" />}
                               {control === 'rotation' && <RotateCw className="w-3 h-3" />}
+                              <span className="capitalize">{control}</span>
                             </button>
                           ))}
                         </div>
@@ -380,7 +406,9 @@ const Customize = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => updateTransform('y', 0.1)}
-                                  className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  aria-label="Move image up"
+                                  title="Move image up"
+                                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                                 >
                                   <ChevronUp className="w-4 h-4" />
                                 </motion.button>
@@ -389,13 +417,17 @@ const Customize = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => updateTransform('x', -0.1)}
-                                  className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  aria-label="Move image left"
+                                  title="Move image left"
+                                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                                 >
                                   <ChevronLeft className="w-4 h-4" />
                                 </motion.button>
                                 <button
                                   onClick={() => setImageTransform(prev => ({ ...prev, x: 0, y: 0 }))}
-                                  className="p-2 rounded-lg bg-accent/20 text-accent text-xs font-medium"
+                                  aria-label="Center image position"
+                                  title="Center image position"
+                                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent/20 text-xs font-medium text-accent"
                                 >
                                   ⊙
                                 </button>
@@ -403,7 +435,9 @@ const Customize = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => updateTransform('x', 0.1)}
-                                  className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  aria-label="Move image right"
+                                  title="Move image right"
+                                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                                 >
                                   <ChevronRight className="w-4 h-4" />
                                 </motion.button>
@@ -412,7 +446,9 @@ const Customize = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => updateTransform('y', -0.1)}
-                                  className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  aria-label="Move image down"
+                                  title="Move image down"
+                                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                                 >
                                   <ChevronDown className="w-4 h-4" />
                                 </motion.button>
@@ -439,7 +475,9 @@ const Customize = () => {
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => updateTransform('scale', -0.1)}
-                                className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                aria-label="Shrink image"
+                                title="Shrink image"
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                               >
                                 <Minus className="w-4 h-4" />
                               </motion.button>
@@ -457,7 +495,9 @@ const Customize = () => {
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => updateTransform('scale', 0.1)}
-                                className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                aria-label="Enlarge image"
+                                title="Enlarge image"
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                               >
                                 <Plus className="w-4 h-4" />
                               </motion.button>
@@ -481,7 +521,9 @@ const Customize = () => {
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => updateTransform('rotation', -15)}
-                                className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                aria-label="Rotate image counterclockwise"
+                                title="Rotate image counterclockwise"
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                               >
                                 <RotateCcw className="w-4 h-4" />
                               </motion.button>
@@ -499,12 +541,14 @@ const Customize = () => {
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => updateTransform('rotation', 15)}
-                                className="p-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                                aria-label="Rotate image clockwise"
+                                title="Rotate image clockwise"
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-accent hover:text-accent-foreground"
                               >
                                 <RotateCw className="w-4 h-4" />
                               </motion.button>
                             </div>
-                            <div className="flex justify-center gap-2">
+                            <div className="flex flex-wrap justify-center gap-2">
                               {[-90, -45, 0, 45, 90].map((angle) => (
                                 <button
                                   key={angle}
@@ -548,7 +592,7 @@ const Customize = () => {
               </div>
 
               {/* Text Customization */}
-              <div className="glass-card p-5 rounded-2xl">
+              <div className="glass-card min-w-0 rounded-2xl p-4 sm:p-5">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                   <Type className="w-5 h-5 text-accent" />
                   Add Custom Text
@@ -598,6 +642,9 @@ const Customize = () => {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setTextColor(color)}
+                        aria-label={`Use text color ${color}`}
+                        aria-pressed={textColor === color}
+                        title={`Text color ${color}`}
                         className={`w-8 h-8 rounded-full border-2 transition-all ${
                           textColor === color
                             ? 'border-accent scale-110'
@@ -611,7 +658,7 @@ const Customize = () => {
               </div>
 
               {/* Actions */}
-              <div className="glass-card p-5 rounded-2xl">
+              <div className="glass-card min-w-0 rounded-2xl p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Price</p>
@@ -623,8 +670,9 @@ const Customize = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={resetCustomization}
-                    className="p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted transition-colors hover:bg-muted/80"
                     title="Reset Design"
+                    aria-label="Reset customization"
                   >
                     <RotateCcw className="w-5 h-5" />
                   </motion.button>

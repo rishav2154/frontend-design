@@ -1,71 +1,86 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Search, X, ArrowRight, Sparkles } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { AlertCircle, Search, X, ArrowRight, Sparkles } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
+import {
+  getPopulatedProductCategories,
+  productCategoryMatchesSearch,
+} from '@/lib/productTaxonomy';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-/* ✅ Categories aligned with DATABASE */
-const categories = [
-  { id: "magic-cup", name: "Mugs", icon: "☕", description: "Custom printed mugs" },
-  { id: "photo-frame", name: "Frames", icon: "🖼️", description: "Personalized frames" },
-  { id: "phone-cover", name: "Phone Cases", icon: "📱", description: "Customized phone covers" },
-  { id: "keychain", name: "Keychains", icon: "🔑", description: "Custom keychains" },
-  { id: "night-lamp", name: "Lamps", icon: "💡", description: "LED night lamps" },
-  { id: "custom", name: "Custom", icon: "✨", description: "Customizable products" },
-];
+const FALLBACK_IMAGE = '/placeholder.svg';
 
 export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
-  const { data: products = [], isLoading } = useProducts();
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useProducts();
 
   useEffect(() => {
-    if (!open) setQuery("");
+    if (!open) setQuery('');
   }, [open]);
 
-  const searchResults = useMemo(() => {
-    if (!query.trim()) return { products: [], categories: [] };
+  const populatedCategories = useMemo(
+    () =>
+      getPopulatedProductCategories(
+        products.map((product) => product.category),
+      ),
+    [products],
+  );
 
-    const lowerQuery = query.toLowerCase();
+  const searchResults = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (!normalizedQuery) return { products: [], categories: [] };
 
     const matchedProducts = products
-      .filter((product) =>
-        product.name?.toLowerCase().includes(lowerQuery) ||
-        product.description?.toLowerCase().includes(lowerQuery) ||
-        product.tags?.some((tag) =>
-          tag.toLowerCase().includes(lowerQuery)
-        )
+      .filter(
+        (product) =>
+          product.name.toLocaleLowerCase().includes(normalizedQuery) ||
+          product.description.toLocaleLowerCase().includes(normalizedQuery) ||
+          product.tags.some((tag) =>
+            tag.toLocaleLowerCase().includes(normalizedQuery),
+          ),
       )
       .slice(0, 5);
 
-    const matchedCategories = categories.filter(
-      (category) =>
-        category.name.toLowerCase().includes(lowerQuery) ||
-        category.description.toLowerCase().includes(lowerQuery)
+    const matchedCategories = populatedCategories.filter((category) =>
+      productCategoryMatchesSearch(category, normalizedQuery),
     );
 
     return { products: matchedProducts, categories: matchedCategories };
-  }, [query, products]);
+  }, [query, products, populatedCategories]);
 
   const handleProductClick = (productId: string) => {
     onOpenChange(false);
-    navigate(`/product/${productId}`);
+    navigate(`/product/${encodeURIComponent(productId)}`);
   };
 
   const handleCategoryClick = (categoryId: string) => {
     onOpenChange(false);
-    navigate(`/shop?category=${categoryId}`);
+    navigate(`/shop?category=${encodeURIComponent(categoryId)}`);
+  };
+
+  const handleImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const image = event.currentTarget;
+    image.onerror = null;
+    image.src = FALLBACK_IMAGE;
   };
 
   const hasResults =
@@ -75,26 +90,29 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-2xl p-0 gap-0 overflow-hidden"
+        className="storefront-glass-dialog gap-0 overflow-hidden p-0 sm:max-w-2xl"
         aria-describedby={undefined}
       >
         <DialogTitle className="sr-only">Search Products</DialogTitle>
 
         {/* Search Input */}
-        <div className="flex items-center gap-3 p-4 border-b border-border">
+        <div className="flex min-w-0 items-center gap-3 border-b border-border p-4 pr-16">
           <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
+            aria-label="Search products and categories"
             placeholder="Search products, categories..."
-            className="flex-1 bg-transparent border-none outline-none text-lg placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 border-none bg-transparent text-base outline-none placeholder:text-muted-foreground sm:text-lg"
             autoFocus
           />
           {query && (
             <button
-              onClick={() => setQuery("")}
-              className="p-1 rounded-full hover:bg-muted transition-colors"
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setQuery('')}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10 sm:w-10"
             >
               <X className="w-4 h-4" />
             </button>
@@ -119,6 +137,28 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
             <div className="text-center py-12 text-muted-foreground">
               Loading...
             </div>
+          ) : isError ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12"
+              role="alert"
+            >
+              <AlertCircle className="w-10 h-10 mx-auto text-destructive mb-4" />
+              <p className="font-medium">Search is temporarily unavailable.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {error?.message || 'Please try again.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="mt-4 text-accent hover:underline disabled:opacity-60"
+              >
+                {isFetching ? 'Trying again…' : 'Try again'}
+              </button>
+            </motion.div>
           ) : !hasResults ? (
             <motion.div
               key="no-results"
@@ -127,12 +167,13 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               className="text-center py-12"
             >
               <p className="text-muted-foreground">
-                No results found for "{query}"
+                No results found for &quot;{query}&quot;
               </p>
               <button
+                type="button"
                 onClick={() => {
                   onOpenChange(false);
-                  navigate("/shop");
+                  navigate('/shop');
                 }}
                 className="mt-4 text-accent hover:underline inline-flex items-center gap-1"
               >
@@ -156,19 +197,14 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                   <div className="space-y-1">
                     {searchResults.categories.map((category) => (
                       <button
+                        type="button"
                         key={category.id}
-                        onClick={() =>
-                          handleCategoryClick(category.id)
-                        }
+                        onClick={() => handleCategoryClick(category.id)}
                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
-                        <span className="text-2xl">
-                          {category.icon}
-                        </span>
+                        <span className="text-2xl">{category.icon}</span>
                         <div className="flex-1">
-                          <p className="font-medium">
-                            {category.name}
-                          </p>
+                          <p className="font-medium">{category.label}</p>
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {category.description}
                           </p>
@@ -189,15 +225,15 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                   <div className="space-y-1">
                     {searchResults.products.map((product) => (
                       <button
+                        type="button"
                         key={product.id}
-                        onClick={() =>
-                          handleProductClick(product.id)
-                        }
+                        onClick={() => handleProductClick(product.id)}
                         className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
                         {/* Image */}
                         <img
-                          src={product.images?.[0] || "/placeholder.svg"}
+                          src={product.images[0] || FALLBACK_IMAGE}
+                          onError={handleImageError}
                           alt={product.name}
                           className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                         />
@@ -206,7 +242,7 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-base line-clamp-1">
-                              {product.name || "Unnamed Product"}
+                              {product.name}
                             </h4>
                             {product.isCustomizable && (
                               <Sparkles className="w-3 h-3 text-accent flex-shrink-0" />
@@ -223,7 +259,7 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                           <p className="font-bold text-base">
                             ₹{product.price.toFixed(2)}
                           </p>
-                          {product.originalPrice && (
+                          {product.originalPrice !== undefined && (
                             <p className="text-xs text-muted-foreground line-through">
                               ₹{product.originalPrice.toFixed(2)}
                             </p>
@@ -237,15 +273,14 @@ export const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
 
               {/* View All */}
               <button
+                type="button"
                 onClick={() => {
                   onOpenChange(false);
-                  navigate(
-                    `/shop?search=${encodeURIComponent(query)}`
-                  );
+                  navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
                 }}
                 className="w-full py-3 text-center text-accent hover:underline flex items-center justify-center gap-2"
               >
-                View all results for "{query}"
+                View all results for &quot;{query}&quot;
                 <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>

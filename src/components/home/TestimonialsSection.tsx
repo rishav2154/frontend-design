@@ -1,96 +1,76 @@
-import { Star, Verified } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
-const testimonials = [
+const whatsappHref =
+  'https://wa.me/917827525257?text=Hi%20The%20Design%20Hive%2C%20I%20need%20help%20choosing%20a%20personalised%20product.';
+
+const questions = [
   {
-    id: 1,
-    name: 'Sarah M.',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
-    content: "Amazing quality! The mug I ordered for my mom's birthday was perfect. She loved it!",
-    rating: 5,
-    product: 'Photo Mug',
-    verified: true,
+    question: 'How do I know whether my phone is supported?',
+    answer: 'Open the case studio and choose your phone brand first. The model and available case-type lists update from the current catalogue, so you only continue with combinations that are available there.',
   },
   {
-    id: 2,
-    name: 'Michael C.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
-    content: "Great t-shirt quality and the print is vibrant. Family reunion shirts were a hit!",
-    rating: 5,
-    product: 'Custom Tee',
-    verified: true,
+    question: 'What kind of image should I upload?',
+    answer: 'A clear, high-resolution image works best. Keep faces, text, and other important details away from the outer edges because a small amount may be trimmed during production.',
   },
   {
-    id: 3,
-    name: 'Emily R.',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-    content: "The photo frames are beautifully crafted. Fast delivery too. Will order again!",
-    rating: 5,
-    product: 'Photo Frame',
-    verified: true,
+    question: 'Can I see the design before ordering?',
+    answer: 'Yes. The studio shows your uploaded image in a phone-cover preview alongside your selected brand, model, case type, and price before you add it to the cart.',
   },
   {
-    id: 4,
-    name: 'David T.',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
-    content: "Custom phone case looks exactly like the preview. Excellent quality and fit.",
-    rating: 5,
-    product: 'Phone Cover',
-    verified: true,
+    question: 'Can I personalise the gifts shown below the phone cases?',
+    answer: 'Products that support a photo or text show a customisable label. Open the product to review its available options before adding it to your cart.',
+  },
+  {
+    question: 'How does free shipping work?',
+    answer: 'The cart currently applies free shipping when the order subtotal is over ₹500. Any valid free-shipping coupon is applied there as well.',
+  },
+  {
+    question: 'Can someone help me choose?',
+    answer: 'Absolutely. Use the WhatsApp button and tell us your phone model, occasion, or what you want to create. A real person can help you find the right place to start.',
   },
 ];
 
 export const TestimonialsSection = () => {
   return (
-    <section className="py-5 sm:py-8 bg-muted/50">
-      <div className="container mx-auto px-2 sm:px-4">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-accent fill-accent" />
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-xl font-bold text-foreground">What Customers Say</h2>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Based on 2,500+ reviews</p>
-            </div>
+    <section className="home-section home-help" aria-labelledby="help-heading">
+      <div className="home-shell px-4 sm:px-6 lg:px-8">
+        <div className="home-help-panel liquid-glass-raised grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+          <div>
+            <span className="home-icon-orb">
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <p className="home-eyebrow mt-6">Human help, when you want it</p>
+            <h2 id="help-heading" className="font-editorial home-section-heading mt-3 text-4xl leading-[0.98] tracking-[-0.04em] sm:text-6xl">
+              Questions are welcome.
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-foreground/[0.64] sm:text-base">
+              Unsure about your phone model, product options, photo, or what makes the right gift? Message The Design Hive and get help from a real person.
+            </p>
+            <a href={whatsappHref} target="_blank" rel="noreferrer" className="home-button home-button-primary mt-7">
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              Ask on WhatsApp
+            </a>
+            <p className="mt-3 text-[11px] leading-5 text-muted-foreground">Opens WhatsApp with a ready-to-send help message.</p>
           </div>
-          <div className="flex flex-col items-center px-4 py-2 bg-accent/10 rounded-xl border border-accent/20">
-            <span className="text-lg sm:text-xl font-bold text-accent">4.9</span>
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-2.5 h-2.5 fill-accent text-accent" />
-              ))}
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-          {testimonials.map((t) => (
-            <div
-              key={t.id}
-              className="p-4 sm:p-5 rounded-2xl bg-card border border-border hover:border-accent/20 transition-all hover:shadow-lg shadow-sm group"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <img
-                  src={t.image}
-                  alt={t.name}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-border/40 ring-offset-1 ring-offset-background"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs sm:text-sm font-semibold text-foreground truncate">{t.name}</p>
-                    {t.verified && <Verified className="w-3.5 h-3.5 text-accent shrink-0" />}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">{t.product}</p>
-                </div>
-              </div>
-              <div className="flex gap-0.5 mb-2.5">
-                {[...Array(t.rating)].map((_, i) => (
-                  <Star key={i} className="w-3 h-3 fill-accent text-accent" />
-                ))}
-              </div>
-              <p className="text-xs sm:text-sm text-foreground/75 line-clamp-3 leading-relaxed">"{t.content}"</p>
-            </div>
-          ))}
+          <Accordion type="single" collapsible className="border-t border-foreground/[0.12]">
+            {questions.map((item, index) => (
+              <AccordionItem key={item.question} value={`question-${index}`} className="border-foreground/[0.12]">
+                <AccordionTrigger className="py-5 text-left text-sm font-semibold leading-6 hover:no-underline sm:py-6 sm:text-base">
+                  <span className="pr-5">{item.question}</span>
+                </AccordionTrigger>
+                <AccordionContent className="max-w-2xl pb-6 pr-8 text-xs leading-6 text-foreground/[0.62] sm:text-sm sm:leading-7">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </div>
     </section>

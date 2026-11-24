@@ -1,45 +1,87 @@
-import { forwardRef } from "react";
-import { motion } from "framer-motion";
-import { Heart, ShoppingBag, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useWishlistStore } from "@/store/wishlistStore";
-import { useCartStore } from "@/store/cartStore";
-import type { Product } from "@/hooks/useProducts";
-import { toast } from "sonner";
+import { forwardRef, type MouseEvent, type SyntheticEvent } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Heart, ShoppingBag, Sparkles, WandSparkles } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { useWishlistStore } from '@/store/wishlistStore';
+import { useCartStore } from '@/store/cartStore';
+import type { Product } from '@/hooks/useProducts';
+import { toast } from 'sonner';
 
 interface ProductCardProps {
   product: Product;
   index?: number;
 }
 
+const FALLBACK_IMAGE = '/placeholder.svg';
+
 export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
   ({ product, index = 0 }, ref) => {
+    const location = useLocation();
+    const reduceMotion = useReducedMotion();
     const { isInWishlist, toggleItem } = useWishlistStore();
     const addItem = useCartStore((state) => state.addItem);
     const openCart = useCartStore((state) => state.openCart);
     const inWishlist = isInWishlist(product.id);
+    const isLanding = location.pathname === '/';
+    const isPhoneCase =
+      product.category === 'phone-cover' ||
+      product.id === 'customize-phone-cover' ||
+      (product.category === 'custom' && product.name.toLocaleLowerCase().includes('phone cover'));
+    const requiresPersonalization = product.isCustomizable;
+    const isOutOfStock = product.stock <= 0;
+    const hasSale =
+      typeof product.originalPrice === 'number' &&
+      Number.isFinite(product.originalPrice) &&
+      product.originalPrice > product.price;
+    const hasRating =
+      typeof product.rating === 'number' &&
+      typeof product.reviewCount === 'number' &&
+      product.reviewCount > 0;
+    const productHref = isPhoneCase
+      ? `/customize-phone-cover?product=${encodeURIComponent(product.id)}`
+      : `/product/${product.id}`;
+    const actionLabel = isPhoneCase
+      ? 'Choose model & customise'
+      : requiresPersonalization
+        ? 'View & personalise'
+        : 'Add to Cart';
+    const image =
+      Array.isArray(product.images) &&
+      typeof product.images[0] === 'string' &&
+      product.images[0].trim().length > 0
+        ? product.images[0]
+        : FALLBACK_IMAGE;
 
-    /* ---------------- ADD TO CART ---------------- */
-    const handleAddToCart = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+      const failedImage = event.currentTarget;
+      failedImage.onerror = null;
+
+      if (failedImage.getAttribute('src') !== FALLBACK_IMAGE) {
+        failedImage.src = FALLBACK_IMAGE;
+      }
+    };
+
+    const handleAddToCart = (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+
+      if (isOutOfStock) {
+        toast.error('This product is currently out of stock');
+        return;
+      }
+
+      if (requiresPersonalization) return;
 
       if (!product?.id || !product?.name) {
-        toast.error("Product not loaded properly");
+        toast.error('Product not loaded properly');
         return;
       }
 
       const price = Number(product.price);
 
-      if (isNaN(price) || price <= 0) {
-        toast.error("Invalid product price");
+      if (Number.isNaN(price) || price <= 0) {
+        toast.error('Invalid product price');
         return;
       }
-
-      const image =
-        Array.isArray(product.images) && product.images.length > 0
-          ? product.images[0]
-          : "/placeholder.svg";
 
       addItem({
         productId: product.id,
@@ -49,138 +91,181 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
         image,
       });
 
-      toast.success("Added to cart");
+      toast.success('Added to cart');
       openCart();
     };
 
-    /* ---------------- WISHLIST ---------------- */
-    const handleToggleWishlist = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleToggleWishlist = (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
 
       toggleItem({
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.images?.[0] || "/placeholder.svg",
+        image,
         category: product.category,
       });
 
-      toast.success(
-        inWishlist ? "Removed from wishlist" : "Added to wishlist"
-      );
+      toast.success(inWishlist ? 'Removed from wishlist' : 'Added to wishlist');
     };
 
     return (
       <motion.div
         ref={ref}
-        initial={{ opacity: 0, y: 30 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: index * 0.1, duration: 0.5 }}
+        transition={{ delay: reduceMotion ? 0 : Math.min(index, 5) * 0.07, duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Link to={`/product/${product.id}`}>
-          <motion.div
-            whileHover={{ y: -8 }}
-            className="glass-card-hover group cursor-pointer overflow-hidden rounded-2xl"
-          >
-            {/* IMAGE */}
-            <div className="relative aspect-square overflow-hidden">
+        <motion.article
+          whileHover={reduceMotion ? undefined : { y: -6 }}
+          className={`group overflow-hidden ${
+            isLanding
+              ? 'home-product-card rounded-[1.5rem] transition-[border-color,box-shadow] duration-300'
+              : 'glass-card-hover rounded-2xl'
+          }`}
+        >
+          <div className="relative aspect-square overflow-hidden">
+            <Link
+              to={productHref}
+              className="block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+              aria-label={`View ${product.name}`}
+            >
               <motion.img
-                src={product.images?.[0] || "/placeholder.svg"}
+                src={image}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={handleImageError}
+                className="h-full w-full object-cover transition-transform duration-700 motion-safe:group-hover:scale-105"
+                loading="lazy"
               />
-
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-              {/* BADGES */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {product.isCustomizable && (
-                  <span className="px-3 py-1 text-xs font-medium bg-accent text-accent-foreground rounded-full flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Customizable
-                  </span>
-                )}
-                {product.originalPrice && (
-                  <span className="px-3 py-1 text-xs font-medium bg-destructive text-destructive-foreground rounded-full">
-                    Sale
-                  </span>
-                )}
-              </div>
-
-              {/* WISHLIST BUTTON */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleToggleWishlist}
-                className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  inWishlist
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-background/50 backdrop-blur-sm text-foreground hover:bg-accent hover:text-accent-foreground"
+              <span
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-t transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 ${
+                  isLanding
+                    ? 'from-foreground/45 via-transparent to-transparent'
+                    : 'from-background/80 via-transparent to-transparent'
                 }`}
-              >
-                <Heart
-                  className={`w-5 h-5 ${inWishlist ? "fill-current" : ""}`}
-                />
-              </motion.button>
+                aria-hidden="true"
+              />
+            </Link>
 
-              {/* QUICK ADD */}
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleAddToCart}
-                className="absolute bottom-4 left-4 right-4 py-3 rounded-xl bg-background/90 backdrop-blur-sm text-foreground font-medium text-sm flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-accent hover:text-accent-foreground"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                Add to Cart
-              </motion.button>
+            <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-col gap-2 sm:left-4 sm:top-4">
+              {product.isCustomizable && (
+                <span
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold sm:px-3 sm:text-xs ${
+                    isLanding
+                      ? 'bg-secondary text-secondary-foreground'
+                      : 'bg-accent text-accent-foreground'
+                  }`}
+                >
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  Customizable
+                </span>
+              )}
+              {hasSale && (
+                <span className="w-fit rounded-full bg-destructive px-2.5 py-1 text-[10px] font-medium text-destructive-foreground sm:px-3 sm:text-xs">
+                  Sale
+                </span>
+              )}
             </div>
 
-            {/* CONTENT */}
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-accent transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                    {product.description}
-                  </p>
-                </div>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleToggleWishlist}
+              className={`absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full shadow-sm transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:right-4 sm:top-4 ${
+                  isLanding
+                    ? inWishlist
+                      ? 'border border-accent/40 bg-accent text-accent-foreground shadow-[0_10px_30px_rgb(var(--home-accent-rgb)/0.2)]'
+                      : 'border border-white/[0.16] bg-black/35 text-white backdrop-blur-xl hover:border-accent/40 hover:bg-accent hover:text-accent-foreground'
+                    : inWishlist
+                    ? 'bg-accent text-accent-foreground'
+                    : 'bg-background/70 text-foreground backdrop-blur-sm hover:bg-accent hover:text-accent-foreground'
+              }`}
+              aria-label={`${inWishlist ? 'Remove' : 'Add'} ${product.name} ${inWishlist ? 'from' : 'to'} wishlist`}
+              aria-pressed={inWishlist}
+            >
+              <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} aria-hidden="true" />
+            </motion.button>
+
+            {requiresPersonalization ? (
+              <Link
+                to={productHref}
+                className={`absolute bottom-3 left-3 right-3 z-20 flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-center text-xs font-semibold shadow-lg backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:bottom-4 sm:left-4 sm:right-4 sm:translate-y-2 sm:text-sm sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-within:translate-y-0 sm:group-focus-within:opacity-100 ${
+                  isLanding
+                    ? 'border border-white/[0.16] bg-black/55 text-white shadow-[0_12px_36px_rgba(0,0,0,0.32)] hover:border-accent/50 hover:bg-accent hover:text-accent-foreground'
+                    : 'bg-background/90 text-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+                aria-label={`${actionLabel} for ${product.name}`}
+              >
+                <WandSparkles className="h-4 w-4" aria-hidden="true" />
+                {actionLabel}
+              </Link>
+            ) : (
+              <motion.button
+                type="button"
+                whileHover={isOutOfStock ? undefined : { scale: 1.02 }}
+                whileTap={isOutOfStock ? undefined : { scale: 0.98 }}
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className={`absolute bottom-3 left-3 right-3 z-20 flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold shadow-lg backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-80 sm:bottom-4 sm:left-4 sm:right-4 sm:translate-y-2 sm:text-sm sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-within:translate-y-0 sm:group-focus-within:opacity-100 ${
+                  isLanding
+                    ? 'border border-white/[0.16] bg-black/55 text-white shadow-[0_12px_36px_rgba(0,0,0,0.32)] hover:border-accent/50 hover:bg-accent hover:text-accent-foreground'
+                    : 'bg-background/90 text-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+                aria-label={isOutOfStock ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
+              >
+                <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                {isOutOfStock ? 'Out of stock' : actionLabel}
+              </motion.button>
+            )}
+          </div>
+
+          <div className="p-3 sm:p-5">
+            <Link
+              to={productHref}
+              className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <h3
+                className="line-clamp-1 text-sm font-semibold transition-colors group-hover:text-accent"
+              >
+                {product.name}
+              </h3>
+              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                {product.description}
+              </p>
+            </Link>
+
+            <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <span className="text-base font-bold sm:text-lg">
+                  ₹{Number(product.price).toFixed(2)}
+                </span>
+                {hasSale && (
+                  <span className="text-xs text-muted-foreground line-through sm:text-sm">
+                    ₹{Number(product.originalPrice).toFixed(2)}
+                  </span>
+                )}
               </div>
 
-              {/* PRICE + RATING */}
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold">
-                    ₹{Number(product.price).toFixed(2)}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      ₹{Number(product.originalPrice).toFixed(2)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <span className="text-accent">★</span>
-                  <span className="text-sm font-medium">
-                    {product.rating}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
+              {hasRating && (
+                <div
+                  className="flex shrink-0 items-center gap-1"
+                  aria-label={`Rated ${product.rating} out of 5 from ${product.reviewCount} reviews`}
+                >
+                  <span className="text-accent" aria-hidden="true">★</span>
+                  <span className="text-xs font-medium sm:text-sm" aria-hidden="true">{product.rating}</span>
+                  <span className="text-[10px] text-muted-foreground sm:text-xs" aria-hidden="true">
                     ({product.reviewCount})
                   </span>
                 </div>
-              </div>
+              )}
             </div>
-          </motion.div>
-        </Link>
+          </div>
+        </motion.article>
       </motion.div>
     );
-  }
+  },
 );
 
-ProductCard.displayName = "ProductCard";
+ProductCard.displayName = 'ProductCard';

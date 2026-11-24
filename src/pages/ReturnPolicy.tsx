@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: 'How do I initiate a return?',
-    a: 'Email us at hello@giftoria.com or call +91 98765 43210 with your order number and reason for return. We will guide you through the next steps within 24 hours.',
+    a: 'Email us at daljeet0113@gmail.com or call +91 98765 43210 with your order number and reason for return. We will guide you through the next steps within 24 hours.',
   },
   {
     q: 'When will I receive my refund?',
@@ -47,15 +47,15 @@ const faqs = [
 
 const ReturnPolicy = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
       <CartDrawer />
-      <main className="pt-24 pb-16">
+      <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
         {/* Hero */}
-        <section className="container mx-auto px-4 lg:px-8 text-center mb-16">
+        <section className="container mx-auto mb-10 px-3 text-center min-[360px]:px-4 sm:mb-16 lg:px-8">
           <motion.h1
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold mb-4"
+            className="mb-4 text-3xl font-bold min-[360px]:text-4xl md:text-5xl"
           >
             Return & <span className="text-gradient-accent">Refund</span> Policy
           </motion.h1>
@@ -68,12 +68,12 @@ const ReturnPolicy = () => {
         </section>
 
         {/* Highlights */}
-        <section className="container mx-auto px-4 lg:px-8 mb-16">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+        <section className="container mx-auto mb-10 px-3 min-[360px]:px-4 sm:mb-16 lg:px-8">
+          <div className="mx-auto grid max-w-5xl gap-4 min-[420px]:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             {highlights.map((item, i) => (
               <motion.div key={item.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.1 }}>
                 <Card className="border-border bg-card h-full hover:border-accent/40 transition-colors">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="p-4 text-center min-[360px]:p-5 sm:p-6">
                     <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
                       <item.icon className="w-6 h-6 text-accent" />
                     </div>
@@ -86,13 +86,13 @@ const ReturnPolicy = () => {
           </div>
         </section>
 
-        <Separator className="max-w-5xl mx-auto mb-16" />
+        <Separator className="mx-auto mb-10 max-w-5xl sm:mb-16" />
 
         {/* Policy Details */}
-        <section className="container mx-auto px-4 lg:px-8 mb-16">
+        <section className="container mx-auto mb-12 px-3 min-[360px]:px-4 sm:mb-16 lg:px-8">
           <div className="max-w-3xl mx-auto space-y-8">
             <div>
-              <h2 className="text-2xl font-semibold mb-4">Return Eligibility</h2>
+              <h2 className="mb-4 text-xl font-semibold min-[360px]:text-2xl">Return Eligibility</h2>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-3"><PackageCheck className="w-5 h-5 text-accent mt-0.5 shrink-0" /> Items must be unused and in their original packaging.</li>
                 <li className="flex items-start gap-3"><PackageCheck className="w-5 h-5 text-accent mt-0.5 shrink-0" /> Return request must be made within 7 days of delivery.</li>
@@ -102,8 +102,8 @@ const ReturnPolicy = () => {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold mb-4">Refund Process</h2>
-              <ol className="space-y-3 text-muted-foreground list-decimal list-inside">
+              <h2 className="mb-4 text-xl font-semibold min-[360px]:text-2xl">Refund Process</h2>
+              <ol className="list-outside list-decimal space-y-3 pl-5 text-muted-foreground">
                 <li>Contact our support team via email or phone with your order details.</li>
                 <li>We'll review your request and provide return instructions within 24 hours.</li>
                 <li>Ship the item back or schedule a free pickup (for damaged items).</li>
@@ -115,16 +115,16 @@ const ReturnPolicy = () => {
         </section>
 
         {/* FAQ */}
-        <section className="container mx-auto px-4 lg:px-8 mb-16">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-semibold mb-6 text-center">Frequently Asked Questions</h2>
+        <section className="container mx-auto mb-12 px-3 min-[360px]:px-4 sm:mb-16 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-5 text-center text-xl font-semibold min-[360px]:text-2xl sm:mb-6">Frequently Asked Questions</h2>
             <Card className="border-border bg-card">
-              <CardContent className="p-6">
+              <CardContent className="p-3 min-[360px]:p-4 sm:p-6">
                 <Accordion type="single" collapsible className="w-full">
                   {faqs.map((faq, i) => (
                     <AccordionItem key={i} value={`faq-${i}`}>
-                      <AccordionTrigger className="text-left">{faq.q}</AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground">{faq.a}</AccordionContent>
+                      <AccordionTrigger className="min-w-0 py-4 text-left text-sm min-[360px]:text-base">{faq.q}</AccordionTrigger>
+                      <AccordionContent className="break-words text-sm text-muted-foreground min-[360px]:text-base">{faq.a}</AccordionContent>
                     </AccordionItem>
                   ))}
                 </Accordion>
@@ -134,15 +134,15 @@ const ReturnPolicy = () => {
         </section>
 
         {/* CTA */}
-        <section className="container mx-auto px-4 lg:px-8">
+        <section className="container mx-auto px-3 min-[360px]:px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="max-w-3xl mx-auto text-center bg-card border border-border rounded-2xl p-10"
+            className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 text-center min-[360px]:p-8 sm:p-10"
           >
             <Mail className="w-10 h-10 text-accent mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Still have questions?</h3>
             <p className="text-muted-foreground mb-6">Our support team is here to help you 6 days a week.</p>
-            <a href="mailto:hello@giftoria.com" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-gradient text-accent-foreground font-medium hover:opacity-90 transition-opacity">
+            <a href="mailto:daljeet0113@gmail.com" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent-gradient px-6 py-3 font-medium text-accent-foreground transition-opacity hover:opacity-90 min-[360px]:w-auto">
               <Mail className="w-4 h-4" /> Email Us
             </a>
           </motion.div>

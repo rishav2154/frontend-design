@@ -28,7 +28,7 @@ export const ProductGridSkeleton = ({ count = 8 }: { count?: number }) => {
 
 export const ProductDetailSkeleton = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 lg:px-8">
           {/* Back button skeleton */}
@@ -85,7 +85,7 @@ export const ProductDetailSkeleton = () => {
 
 export const PageSkeleton = () => {
   return (
-    <div className="min-h-screen bg-background animate-pulse">
+    <div className="min-h-dvh bg-background animate-pulse">
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 lg:px-8">
           {/* Header skeleton */}

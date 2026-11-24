@@ -1,21 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark" data-theme="dark" style="color-scheme: dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <title>The design hive</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <title>The Design Hive | Custom Phone Cases &amp; Personalised Gifts</title>
+    <meta name="description" content="Shop custom phone cases and personalised mugs, frames, keychains, lamps, and more from The Design Hive." />
+    <meta name="author" content="The Design Hive" />
+    <meta
+      name="theme-color"
+      content="#241912"
+      data-light="#f4eadc"
+      data-dark="#241912"
+    />
+    <script>
+      (() => {
+        const storageKey = 'design-hive-theme';
+        const fallbackTheme = 'dark';
+        let theme = fallbackTheme;
 
-    <meta property="og:title" content="The design hive" />
-    <meta property="og:description" content="Lovable Generated Project" />
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          if (storedTheme === 'light' || storedTheme === 'dark') {
+            theme = storedTheme;
+          } else if (storedTheme !== null) {
+            localStorage.removeItem(storageKey);
+          }
+        } catch {
+          // Keep the safe fallback when storage is unavailable.
+        }
+
+        const root = document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(theme);
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        const color = theme === 'light' ? themeColor?.dataset.light : themeColor?.dataset.dark;
+        if (themeColor && color) themeColor.content = color;
+      })();
+    </script>
+
+    <meta property="og:title" content="The Design Hive | Custom Phone Cases &amp; Personalised Gifts" />
+    <meta property="og:description" content="Shop custom phone cases and personalised mugs, frames, keychains, lamps, and more from The Design Hive." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/og-phone-case.jpg" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="The Design Hive | Custom Phone Cases &amp; Personalised Gifts" />
+    <meta name="twitter:description" content="Shop custom phone cases and personalised mugs, frames, keychains, lamps, and more from The Design Hive." />
+    <meta name="twitter:image" content="/og-phone-case.jpg" />
 
     <!-- Meta Pixel Code -->
     <script>

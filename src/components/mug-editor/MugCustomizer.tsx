@@ -24,7 +24,6 @@ export function MugCustomizer() {
   const { toast } = useToast();
 
   const handleCanvasUpdate = useCallback((dataUrl: string) => {
-    console.log('MugCustomizer: Canvas updated, dataUrl length:', dataUrl?.length);
     setCanvasTexture(dataUrl);
   }, []);
 
@@ -42,28 +41,28 @@ export function MugCustomizer() {
   }, [selectedVariant.id, toast]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="p-2 rounded-xl bg-accent/10">
             <Coffee className="w-6 h-6 text-accent" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-xl font-bold">Magic Cup Designer</h2>
             <p className="text-sm text-muted-foreground">Create your custom printed mug</p>
           </div>
         </div>
         
         {/* Variant Selection */}
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
           {MUG_VARIANTS.map((variant) => (
             <Button
               key={variant.id}
               variant={selectedVariant.id === variant.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedVariant(variant)}
-              className="gap-2"
+              className="min-w-0 gap-2 whitespace-normal sm:whitespace-nowrap"
             >
               <Coffee className="w-4 h-4" />
               {variant.name}
@@ -74,14 +73,14 @@ export function MugCustomizer() {
       </div>
 
       {/* Main Editor Layout */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         {/* Left: 2D Editor */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Sparkles className="w-4 h-4" />
             2D Design Editor
           </div>
-          <div className="glass-card p-4 rounded-2xl">
+          <div className="glass-card min-w-0 rounded-2xl p-2 sm:p-4">
             <Fabric2DEditor
               variant={selectedVariant}
               onCanvasUpdate={handleCanvasUpdate}
@@ -91,12 +90,12 @@ export function MugCustomizer() {
         </div>
 
         {/* Right: 3D Preview */}
-        <div className="flex flex-col space-y-4">
+        <div className="flex min-w-0 flex-col space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Coffee className="w-4 h-4" />
             3D Live Preview
           </div>
-          <div className="glass-card p-4 rounded-2xl flex-1">
+          <div className="glass-card min-w-0 flex-1 rounded-2xl p-2 sm:p-4">
             <MugPreview3D
               canvasTexture={canvasTexture}
               variant={selectedVariant}
@@ -105,7 +104,7 @@ export function MugCustomizer() {
           </div>
 
           {/* Color Selection */}
-          <div className="glass-card p-4 rounded-2xl">
+          <div className="glass-card rounded-2xl p-3 sm:p-4">
             <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <Palette className="w-4 h-4" />
               Mug Color
@@ -124,6 +123,8 @@ export function MugCustomizer() {
                   }`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
+                  aria-label={`Use ${color.name} mug color`}
+                  aria-pressed={mugColor === color.value}
                 >
                   {mugColor === color.value && (
                     <Check className={`w-4 h-4 mx-auto ${color.value === '#ffffff' ? 'text-black' : 'text-white'}`} />
@@ -134,15 +135,15 @@ export function MugCustomizer() {
           </div>
 
           {/* Pricing Info */}
-          <div className="glass-card p-4 rounded-2xl">
-            <div className="flex items-center justify-between">
+          <div className="glass-card rounded-2xl p-3 sm:p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Selected Variant</p>
                 <p className="text-2xl font-bold text-gradient-accent">
                   ₹{selectedVariant.price}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <p className="text-xs text-muted-foreground">Print Area</p>
                 <p className="text-sm font-medium">{selectedVariant.printArea.width}x{selectedVariant.printArea.height}px</p>
                 <p className="text-xs text-muted-foreground">300 DPI Ready</p>

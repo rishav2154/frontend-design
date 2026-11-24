@@ -60,7 +60,7 @@ const OrderSuccess = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-dvh min-h-dvh items-center justify-center px-4">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
@@ -69,26 +69,26 @@ const OrderSuccess = () => {
   if (!order) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-2xl text-center">
-          <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
-          <h1 className="text-3xl font-bold mb-4">Order Confirmed!</h1>
+      <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
+        <div className="container mx-auto max-w-2xl px-3 text-center min-[360px]:px-4">
+          <CheckCircle className="mx-auto mb-4 h-14 w-14 text-green-500 min-[360px]:h-16 min-[360px]:w-16" />
+          <h1 className="mb-4 text-2xl font-bold min-[360px]:text-3xl">Order Confirmed!</h1>
 
-          <div className="glass-card p-6 mb-6 text-left">
-            <p><strong>Order #:</strong> {order.order_number}</p>
-            <p><strong>Status:</strong> {order.status}</p>
-            <p><strong>Total:</strong> ₹{order.total}</p>
+          <div className="glass-card mb-6 min-w-0 space-y-2 p-4 text-left min-[360px]:p-6">
+            <p className="break-all"><strong>Order #:</strong> {order.order_number}</p>
+            <p className="break-words"><strong>Status:</strong> {order.status}</p>
+            <p className="break-words"><strong>Total:</strong> ₹{order.total}</p>
           </div>
 
-          <div className="flex gap-4">
-            <Link to="/shop" className="flex-1">
-              <Button className="w-full">Continue Shopping</Button>
+          <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:gap-4">
+            <Link to="/shop" className="min-w-0 flex-1">
+              <Button className="min-h-11 w-full">Continue Shopping</Button>
             </Link>
-            <Link to="/" className="flex-1">
-              <Button variant="outline" className="w-full">Home</Button>
+            <Link to="/" className="min-w-0 flex-1">
+              <Button variant="outline" className="min-h-11 w-full">Home</Button>
             </Link>
           </div>
         </div>

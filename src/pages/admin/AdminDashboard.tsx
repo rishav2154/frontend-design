@@ -92,16 +92,16 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
           <p className="text-muted-foreground">
             Welcome to your admin dashboard
           </p>
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {statCards.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -152,19 +152,19 @@ const AdminDashboard = () => {
                   {recentOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      className="flex min-w-0 flex-wrap items-start justify-between gap-3 rounded-lg bg-muted/50 p-3"
                     >
-                      <div>
-                        <p className="font-medium">{order.id}</p>
+                      <div className="min-w-0 flex-1 basis-32">
+                        <p className="truncate font-medium" title={order.id}>{order.id}</p>
                         <p className="text-sm text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="ml-auto min-w-0 text-right">
                         <p className="font-medium">
                           ₹{Number(order.final_amount).toFixed(2)}
                         </p>
-                        <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500">
+                        <span className="inline-block max-w-full truncate rounded-full bg-yellow-500/10 px-2 py-1 text-xs text-yellow-500">
                           {order.status}
                         </span>
                       </div>

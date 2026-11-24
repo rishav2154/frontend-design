@@ -28,6 +28,10 @@ interface Customization {
   imageUrl?: string;
   text?: string;
   color?: string;
+  brand?: string;
+  model?: string;
+  coverType?: string;
+  specialInstructions?: string;
 }
 
 interface OrderItem {
@@ -143,11 +147,11 @@ const OrdersHistory = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
         <Navbar />
         <CartDrawer />
-        <main className="pt-24 pb-16">
-          <div className="container mx-auto px-4 max-w-4xl">
+        <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
+          <div className="container mx-auto max-w-4xl px-3 min-[360px]:px-4">
             <div className="space-y-4">
               {[1, 2].map(i => (
                 <div key={i} className="glass-card rounded-2xl p-6">
@@ -163,19 +167,19 @@ const OrdersHistory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-4xl">
+      <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
+        <div className="container mx-auto max-w-4xl px-3 min-[360px]:px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-6 min-w-0 sm:mb-8"
           >
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <ShoppingBag className="w-8 h-8 text-accent" />
+            <h1 className="flex min-w-0 items-center gap-3 text-2xl font-bold min-[360px]:text-3xl">
+              <ShoppingBag className="h-7 w-7 shrink-0 text-accent min-[360px]:h-8 min-[360px]:w-8" />
               My Orders
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -185,7 +189,7 @@ const OrdersHistory = () => {
 
           {/* EMPTY STATE */}
           {orders.length === 0 ? (
-            <div className="glass-card rounded-2xl p-12 text-center">
+            <div className="glass-card rounded-2xl p-6 text-center min-[360px]:p-8 sm:p-12">
               <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
               <Button onClick={() => navigate('/shop')}>Browse Products</Button>
@@ -209,11 +213,13 @@ const OrdersHistory = () => {
                     {/* HEADER */}
                     <button
                       onClick={() => toggleOrderExpand(order.id)}
-                      className="w-full p-6 flex justify-between items-center"
+                      className="flex min-h-11 w-full min-w-0 flex-col items-stretch justify-between gap-3 p-4 text-left min-[520px]:flex-row min-[520px]:items-center sm:p-6"
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} order ${order.order_number}`}
                     >
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-lg">
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 min-[360px]:gap-3">
+                          <span className="break-all text-base font-semibold min-[360px]:text-lg">
                             {order.order_number}
                           </span>
                           <Badge className={`${statusInfo.color} text-white`}>
@@ -229,7 +235,7 @@ const OrdersHistory = () => {
                             {order.payment_method.toUpperCase()}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="mt-1 break-words text-sm text-muted-foreground">
                           {format(new Date(order.created_at), 'MMM dd, yyyy')}
                           {order.pay_on_delivery > 0 && (
                             <>
@@ -242,22 +248,22 @@ const OrdersHistory = () => {
                         </p>
                       </div>
 
-                      <div className="text-right flex items-center gap-3">
-                        <p className="text-2xl font-bold">₹{order.total.toLocaleString('en-IN')}</p>
-                        {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                      <div className="flex shrink-0 items-center justify-between gap-3 text-left min-[520px]:justify-end min-[520px]:text-right">
+                        <p className="break-words text-xl font-bold min-[360px]:text-2xl">₹{order.total.toLocaleString('en-IN')}</p>
+                        {isExpanded ? <ChevronUp className="shrink-0" /> : <ChevronDown className="shrink-0" />}
                       </div>
                     </button>
 
                     {/* EXPANDED */}
                     {isExpanded && (
-                      <div className="p-6 border-t space-y-6">
+                      <div className="space-y-5 border-t p-4 min-[360px]:p-5 sm:space-y-6 sm:p-6">
                         {/* ADDRESS */}
                         <div className="grid md:grid-cols-2 gap-6">
                           <div>
                             <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                               📍 Delivery Address
                             </h4>
-                            <div className="bg-muted/50 p-4 rounded-xl text-sm space-y-1">
+                            <div className="min-w-0 break-words rounded-xl bg-muted/50 p-4 text-sm space-y-1">
                               <div className="font-medium">{order.shipping_address.full_name}</div>
                               <div>{order.shipping_address.address_line1}</div>
                               {order.shipping_address.address_line2 && (
@@ -275,19 +281,19 @@ const OrdersHistory = () => {
                             <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                               💳 Payment
                             </h4>
-                            <div className="bg-muted/50 p-4 rounded-xl text-sm space-y-2">
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0 rounded-xl bg-muted/50 p-4 text-sm space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium">Method:</span>
                                 <Badge>{order.payment_method.toUpperCase()}</Badge>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium">Status:</span>
                                 <Badge variant={order.payment_status === 'paid' ? "default" : "secondary"}>
                                   {order.payment_status}
                                 </Badge>
                               </div>
                               {order.pay_on_delivery > 0 && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <span className="font-medium">Pay on Delivery:</span>
                                   <span className="font-semibold text-accent">
                                     ₹{order.pay_on_delivery.toLocaleString('en-IN')}
@@ -303,7 +309,7 @@ const OrdersHistory = () => {
                           {order.order_items.map((item) => (
                             <div
                               key={item.id}
-                              className="flex gap-4 p-4 rounded-xl bg-muted/30 mb-4 last:mb-0"
+                              className="mb-4 flex min-w-0 flex-col gap-3 rounded-xl bg-muted/30 p-3 min-[420px]:flex-row min-[420px]:gap-4 min-[420px]:p-4 last:mb-0"
                             >
                               {/* PRODUCT IMAGE */}
                               <img
@@ -313,7 +319,7 @@ const OrdersHistory = () => {
                               />
 
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-base mb-1">
+                                <p className="mb-1 break-words text-base font-medium">
                                   {item.product_name}
                                 </p>
                                 <p className="text-sm text-muted-foreground mb-2">
@@ -324,15 +330,15 @@ const OrdersHistory = () => {
                                 {item.customization && (
                                   <div className="space-y-2 text-xs text-muted-foreground mb-3">
                                     {item.customization.text && (
-                                      <p className="flex items-center gap-2">
+                                      <p className="flex min-w-0 flex-wrap items-center gap-2">
                                         <span className="font-medium">✏️ Text:</span>
-                                        <span className="font-mono bg-background px-2 py-1 rounded text-sm">
+                                        <span className="max-w-full break-all rounded bg-background px-2 py-1 font-mono text-sm">
                                           "{item.customization.text}"
                                         </span>
                                       </p>
                                     )}
                                     {item.customization.color && (
-                                      <p className="flex items-center gap-2">
+                                      <p className="flex min-w-0 flex-wrap items-center gap-2">
                                         <span className="font-medium">🎨 Color:</span>
                                         <span 
                                           className="w-4 h-4 rounded-full border inline-block mr-1"
@@ -341,13 +347,21 @@ const OrdersHistory = () => {
                                         {item.customization.color}
                                       </p>
                                     )}
+                                    {item.customization.brand && <p><span className="font-medium">Brand:</span> {item.customization.brand}</p>}
+                                    {item.customization.model && <p><span className="font-medium">Model:</span> {item.customization.model}</p>}
+                                    {item.customization.coverType && <p><span className="font-medium">Cover:</span> {item.customization.coverType}</p>}
+                                    {item.customization.specialInstructions && (
+                                      <p className="rounded bg-amber-50 p-2 text-amber-950">
+                                        <span className="font-medium">Instructions:</span> {item.customization.specialInstructions}
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>
 
                               {/* CUSTOM DESIGN DOWNLOAD */}
                               {hasCustomDesign(item) && (
-                                <div className="flex flex-col items-end gap-2 ml-auto">
+                                <div className="ml-0 flex shrink-0 flex-row items-center justify-between gap-3 min-[420px]:ml-auto min-[420px]:flex-col min-[420px]:items-end min-[420px]:gap-2">
                                   <div className="relative">
                                     <img
                                       src={item.customization!.imageUrl!}
@@ -365,7 +379,7 @@ const OrdersHistory = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="h-8 px-3 text-xs"
+                                    className="min-h-11 px-3 text-xs"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       downloadUploadedImage(
@@ -395,7 +409,7 @@ const OrdersHistory = () => {
 
                         {/* SUMMARY & INVOICE */}
                         <div className="pt-4 border-t bg-muted/50 p-5 rounded-xl space-y-3">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-sm md:grid-cols-4">
                             <div>Subtotal:</div>
                             <div className="text-right font-medium">₹{order.subtotal.toLocaleString('en-IN')}</div>
                             <div>Shipping:</div>
@@ -409,16 +423,17 @@ const OrdersHistory = () => {
                               </>
                             )}
                           </div>
-                          <div className="flex justify-between items-baseline pt-3 border-t">
+                          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t pt-3">
                             <span className="text-lg font-semibold">Total:</span>
-                            <span className="text-2xl font-bold text-accent">
+                            <span className="break-words text-right text-xl font-bold text-accent min-[360px]:text-2xl">
                               ₹{order.total.toLocaleString('en-IN')}
                             </span>
                           </div>
-                          <div className="flex justify-end">
+                          <div className="flex justify-stretch min-[420px]:justify-end">
                             <Button
                               variant="outline"
                               onClick={() => downloadInvoice(order.id)}
+                              className="min-h-11 w-full min-[420px]:w-auto"
                               disabled={downloading === order.id}
                             >
                               {downloading === order.id ? (

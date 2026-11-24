@@ -1,39 +1,43 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Smartphone, Upload, ShoppingBag, Check, X,
-  Search, ChevronDown, Sparkles, FileText
-} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Check, FileText, ShoppingBag, Sparkles, Smartphone, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { useCartStore } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
 import { apiFetch, apiUpload, endpoints } from '@/lib/api';
+import productPhoneFallback from '@/assets/product-phone.jpg';
+import type {
+  PhoneCoverBrand,
+  PhoneCoverCatalogProduct,
+  PhoneCoverModel,
+  PhoneCoverPageSettings,
+  PhoneCoverType,
+} from '@/lib/phoneCoverCatalog';
 
-export function PhoneCoverCustomizer() {
+interface PhoneCoverCustomizerProps {
+  product?: PhoneCoverCatalogProduct | null;
+  initialBrandId?: string;
+  initialModelId?: string;
+  settings?: PhoneCoverPageSettings;
+}
 
+export function PhoneCoverCustomizer({
+  product,
+  initialBrandId = '',
+  initialModelId = '',
+  settings,
+}: PhoneCoverCustomizerProps) {
   const [uploading, setUploading] = useState(false);
-
-  // 🔥 Dynamic Data
-  const [brands, setBrands] = useState<any[]>([]);
-  const [models, setModels] = useState<any[]>([]);
-  const [coverTypes, setCoverTypes] = useState<any[]>([]);
-
-  const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedCoverType, setSelectedCoverType] = useState<string>('');
-
+  const [brands, setBrands] = useState<PhoneCoverBrand[]>([]);
+  const [models, setModels] = useState<PhoneCoverModel[]>([]);
+  const [coverTypes, setCoverTypes] = useState<PhoneCoverType[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState(initialBrandId);
+  const [selectedModel, setSelectedModel] = useState(initialModelId);
+  const [selectedCoverType, setSelectedCoverType] = useState(product?.cover_type_id || '');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-
-  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
-
-  const [brandSearch, setBrandSearch] = useState('');
-  const [modelSearch, setModelSearch] = useState('');
-
   const [showSuccess, setShowSuccess] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState('');
 
@@ -42,95 +46,136 @@ export function PhoneCoverCustomizer() {
   const openCart = useCartStore((state) => state.openCart);
   const { toast } = useToast();
 
-  // ============================
-  // 🔥 LOAD BRANDS
-  // ============================
   useEffect(() => {
-    apiFetch(endpoints.phoneCover.brands)
-      .then(data => setBrands(data as any[]))
-      .catch(() => toast({ title: "Failed to load brands", variant: "destructive" }));
+    apiFetch<PhoneCoverBrand[]>(endpoints.phoneCover.brands)
+      .then(setBrands)
+      .catch(() => toast({ title: 'Failed to load phone brands', variant: 'destructive' }));
   }, [toast]);
 
-  // ============================
-  // 🔥 LOAD MODELS
-  // ============================
   useEffect(() => {
-    if (!selectedBrand) return;
+    if (initialBrandId) setSelectedBrand(initialBrandId);
+    if (initialModelId) setSelectedModel(initialModelId);
+  }, [initialBrandId, initialModelId]);
 
-    apiFetch(endpoints.phoneCover.models, { args: [selectedBrand] })
-      .then(data => {
-        setModels(data as any[]);
-        setSelectedModel('');
-        setSelectedCoverType('');
-      });
-  }, [selectedBrand]);
-
-  // ============================
-  // 🔥 LOAD COVER TYPES
-  // ============================
   useEffect(() => {
-    if (!selectedModel) return;
+    setSelectedCoverType(product?.cover_type_id || '');
+    setUploadedImage(null);
+    setSpecialInstructions('');
+  }, [product?.id, product?.cover_type_id]);
 
-    apiFetch(endpoints.phoneCover.coverTypes, { args: [selectedModel] })
-      .then(data => {
-        setCoverTypes(data as any[]);
+  useEffect(() => {
+    if (!selectedBrand) {
+      setModels([]);
+      setSelectedModel('');
+      setCoverTypes([]);
+      setSelectedCoverType('');
+      return;
+    }
+
+    apiFetch<PhoneCoverModel[]>(endpoints.phoneCover.models, { args: [selectedBrand] })
+      .then((modelRows) => {
+        const supportedIds = new Set(product?.supported_model_ids || []);
+        const compatibleRows = supportedIds.size
+          ? modelRows.filter((model) => supportedIds.has(model.id))
+          : modelRows;
+        setModels(compatibleRows);
+        setSelectedModel((current) => {
+          const preferred = initialModelId || current;
+          return compatibleRows.some((model) => model.id === preferred) ? preferred : '';
+        });
         setSelectedCoverType('');
+      })
+      .catch(() => {
+        setModels([]);
+        toast({ title: 'Failed to load phone models', variant: 'destructive' });
       });
-  }, [selectedModel]);
+  }, [initialModelId, product, selectedBrand, toast]);
 
-  const selectedBrandData = brands.find(b => b.id === selectedBrand);
-  const selectedModelData = models.find(m => m.id === selectedModel);
-  const selectedCoverData = coverTypes.find(c => c.id === selectedCoverType);
+  useEffect(() => {
+    if (!selectedModel) {
+      setCoverTypes([]);
+      setSelectedCoverType('');
+      return;
+    }
 
-  const filteredBrands = brands.filter(b =>
-    b.name.toLowerCase().includes(brandSearch.toLowerCase())
+    apiFetch<PhoneCoverType[]>(endpoints.phoneCover.coverTypes, { args: [selectedModel] })
+      .then((rows) => {
+        let compatibleRows = product?.cover_type_id
+          ? rows.filter((cover) => cover.id === product.cover_type_id)
+          : rows;
+        if (product?.cover_type_id && compatibleRows.length === 0) {
+          compatibleRows = [{
+            id: product.cover_type_id,
+            name: product.cover_type_name || 'Phone Cover',
+            description: product.description,
+            price: product.price,
+          }];
+        }
+        setCoverTypes(compatibleRows);
+        setSelectedCoverType(
+          compatibleRows.some((cover) => cover.id === product?.cover_type_id)
+            ? product?.cover_type_id || ''
+            : compatibleRows.length === 1
+              ? compatibleRows[0].id
+              : '',
+        );
+      })
+      .catch(() => {
+        setCoverTypes([]);
+        toast({ title: 'Failed to load compatible case types', variant: 'destructive' });
+      });
+  }, [product, selectedModel, toast]);
+
+  const selectedBrandData = brands.find((brand) => brand.id === selectedBrand);
+  const selectedModelData = models.find((model) => model.id === selectedModel);
+  const selectedCoverData = coverTypes.find((cover) => cover.id === selectedCoverType);
+  const selectedProductModel = product?.models.find((model) => model.model_id === selectedModel);
+  const selectedPrice = Number(
+    selectedProductModel?.price_override ?? product?.price ?? selectedCoverData?.price ?? 0,
   );
-
-  const filteredModels = models.filter(m =>
-    m.name.toLowerCase().includes(modelSearch.toLowerCase())
+  const availableStock = Number(
+    selectedProductModel?.stock_override ?? product?.stock ?? 1,
   );
+  const previewImage = uploadedImage || product?.preview_image_url || product?.images?.[0] || productPhoneFallback;
+  const allowsImage =
+    product?.customization_options?.canAddImage ??
+    product?.customization_options?.allowImage ??
+    true;
+  const requiresImage = allowsImage && (product?.requires_image ?? true);
+  const instructionStep = allowsImage ? 4 : 3;
 
-  // ============================
-  // IMAGE UPLOAD
-  // ============================
-  const handleImageUpload = useCallback(async (e: any) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
+    const maxUploadMb = settings?.max_upload_mb || 10;
+    if (file.size > maxUploadMb * 1024 * 1024) {
       toast({
-        title: "File too large",
-        description: "Please upload an image under 10MB",
-        variant: "destructive"
+        title: 'File too large',
+        description: `Please upload an image under ${maxUploadMb}MB`,
+        variant: 'destructive',
       });
       return;
     }
 
     setUploading(true);
-
     try {
       const formData = new FormData();
       formData.append('image', file);
-
-      const data: any = await apiUpload(endpoints.upload, formData);
+      const data = await apiUpload<{ imageUrl: string }>(endpoints.upload, formData);
       setUploadedImage(data.imageUrl);
-
+      toast({ title: 'Image uploaded', description: 'Your preview is ready.' });
+    } catch (error: any) {
       toast({
-        title: "Image uploaded successfully",
-        description: "Your design is ready!"
-      });
-
-    } catch (err: any) {
-      toast({
-        title: "Upload failed",
-        description: err.message || "Please try again",
-        variant: "destructive"
+        title: 'Upload failed',
+        description: error.message || 'Please try again',
+        variant: 'destructive',
       });
     } finally {
       setUploading(false);
-      e.target.value = '';
+      event.target.value = '';
     }
-  }, [toast]);
+  }, [settings?.max_upload_mb, toast]);
 
   const removeImage = () => {
     setUploadedImage(null);
@@ -140,397 +185,297 @@ export function PhoneCoverCustomizer() {
   const handleAddToCart = () => {
     if (!selectedBrand || !selectedModel || !selectedCoverType) {
       toast({
-        title: "Select Complete Details",
-        description: "Please select brand, model and cover type",
-        variant: "destructive"
+        title: 'Complete your phone details',
+        description: 'Select the brand, model, and compatible case type.',
+        variant: 'destructive',
       });
       return;
     }
-
-    if (!uploadedImage) {
+    if (requiresImage && !uploadedImage) {
       toast({
-        title: "Upload Image",
-        description: "Please upload an image",
-        variant: "destructive"
+        title: 'Upload your design',
+        description: 'This product requires an image before it can be added to the cart.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (availableStock <= 0) {
+      toast({
+        title: 'Out of stock',
+        description: 'This cover is not available for the selected model.',
+        variant: 'destructive',
       });
       return;
     }
 
-    const customText = `Custom Phone Cover: ${selectedBrandData?.name} ${selectedModelData?.name}, ${selectedCoverData?.name}`;
-
+    const summary = `${selectedBrandData?.name} ${selectedModelData?.name} · ${selectedCoverData?.name}`;
     addItem({
-      productId: "customize-phone-cover",
-      name: "Custom Phone Cover",
-      price: Number(selectedCoverData?.price || 0),
+      productId: product?.id || 'customize-phone-cover',
+      name: product?.name || 'Custom Phone Cover',
+      price: selectedPrice,
       quantity: 1,
-      image: uploadedImage,
+      image: uploadedImage || previewImage || '/placeholder.svg',
       customization: {
-        text: customText,
-        imageUrl: uploadedImage,
-        color: selectedCoverType,
+        text: summary,
+        imageUrl: uploadedImage || undefined,
+        ...(product ? {} : { color: selectedCoverType }),
+        brand: selectedBrandData?.name,
+        brandId: selectedBrand,
+        model: selectedModelData?.name,
+        modelId: selectedModel,
+        coverType: selectedCoverData?.name,
+        coverTypeId: selectedCoverType,
+        specialInstructions: specialInstructions.trim() || undefined,
       },
     });
 
     setShowSuccess(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setShowSuccess(false);
       openCart();
-    }, 1500);
+    }, 900);
   };
 
-  const isComplete = selectedBrand && selectedModel && selectedCoverType && uploadedImage;
+  const isComplete = Boolean(
+    selectedBrand &&
+    selectedModel &&
+    selectedCoverType &&
+    (!requiresImage || uploadedImage) &&
+    availableStock > 0,
+  );
+
+  const completionHint = !selectedBrand
+    ? 'Select your phone brand to begin.'
+    : !selectedModel
+      ? 'Now choose the exact phone model.'
+      : !selectedCoverType
+        ? 'Choose an available case type.'
+        : requiresImage && !uploadedImage
+          ? 'Upload your design to continue.'
+          : availableStock <= 0
+            ? 'This option is currently out of stock.'
+            : 'Everything looks good.';
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Left: Preview */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="order-2 lg:order-1"
+    <div className="mx-auto max-w-6xl">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <motion.aside
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="order-2 lg:order-1 lg:sticky lg:top-24"
         >
-          <div className="bg-card border border-border p-6 rounded-3xl sticky top-24">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-accent" />
-              Cover Preview
-            </h3>
-
-            {/* Phone Cover Preview */}
-            <div className="aspect-[3/4] bg-gradient-to-br from-muted to-muted/50 rounded-3xl overflow-hidden relative flex items-center justify-center">
-              {uploadedImage ? (
-                <div className="w-full h-full relative">
-                  <img
-                    src={uploadedImage}
-                    alt="Cover design"
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Phone frame overlay */}
-                  <div className="absolute inset-0 border-[12px] border-black/20 rounded-3xl pointer-events-none" />
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-6 bg-black/30 rounded-full" />
-                </div>
+          <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
+            <div className="relative aspect-[4/3] max-h-[380px] bg-muted/40 p-5 sm:p-6">
+              {previewImage ? (
+                <img
+                  src={previewImage}
+                  alt={product?.name || 'Phone cover preview'}
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = productPhoneFallback;
+                  }}
+                  className="h-full w-full rounded-2xl object-contain"
+                />
               ) : (
-                <div className="text-center p-8">
-                  <Smartphone className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">Upload an image to see preview</p>
+                <div className="grid h-full place-items-center text-center text-muted-foreground">
+                  <div>
+                    <Smartphone className="mx-auto mb-3 h-14 w-14 opacity-40" />
+                    <p>Product preview</p>
+                  </div>
                 </div>
+              )}
+              {uploadedImage && (
+                <span className="absolute bottom-4 left-4 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold shadow backdrop-blur">
+                  Your uploaded design
+                </span>
               )}
             </div>
 
-            {/* Selection Summary */}
-            {(selectedBrand || selectedModel) && (
-              <div className="mt-4 p-4 bg-muted/30 rounded-xl space-y-2">
-                {selectedBrand && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Brand:</span>
-                 <span className="font-medium">{selectedBrandData?.name}</span>
-
-                  </div>
-                )}
-                {selectedModel && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Model:</span>
-                  <span className="font-medium">{selectedModelData?.name}</span>
-
-                  </div>
-                )}
-                {selectedCoverData && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Cover Type:</span>
-                    <span className="font-medium">{selectedCoverData.name}</span>
-                  </div>
-                )}
+            <div className="space-y-4 p-5 sm:p-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                  {product?.cover_type_name || 'Phone cover'}
+                </p>
+                <h3 className="mt-1 line-clamp-2 text-xl font-bold">{product?.name || 'Custom Phone Cover'}</h3>
               </div>
-            )}
 
-            {/* Price & Add to Cart */}
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Total Price</span>
-                <span className="text-3xl font-bold">₹{selectedCoverData?.price || 299}</span>
+              {(selectedBrandData || selectedModelData || selectedCoverData) && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedBrandData && <span className="rounded-full bg-muted px-3 py-1 text-xs">{selectedBrandData.name}</span>}
+                  {selectedModelData && <span className="rounded-full bg-muted px-3 py-1 text-xs">{selectedModelData.name}</span>}
+                  {selectedCoverData && <span className="rounded-full bg-muted px-3 py-1 text-xs">{selectedCoverData.name}</span>}
+                </div>
+              )}
+
+              <div className="flex items-end justify-between gap-4 border-t pt-4">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-2xl font-bold">₹{selectedPrice.toFixed(2)}</span>
               </div>
 
               <Button
                 onClick={handleAddToCart}
                 disabled={!isComplete}
-                className="w-full h-14 text-lg bg-accent-gradient hover:opacity-90"
+                className="h-12 w-full text-base"
               >
                 {showSuccess ? (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Added to Cart!
-                  </>
+                  <><Check className="mr-2 h-5 w-5" />Added to cart</>
                 ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5 mr-2" />
-                    Add to Cart
-                  </>
+                  <><ShoppingBag className="mr-2 h-5 w-5" />Add to cart</>
                 )}
               </Button>
+              <p className={`text-center text-xs ${isComplete ? 'text-accent' : 'text-muted-foreground'}`}>
+                {completionHint}
+              </p>
             </div>
           </div>
-        </motion.div>
+        </motion.aside>
 
-        {/* Right: Configuration */}
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="order-1 lg:order-2 space-y-6"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="order-1 space-y-4 lg:order-2"
         >
-          {/* Step 1: Select Brand */}
-          <div className="bg-card border border-border p-6 rounded-2xl" style={{ overflow: 'visible' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">1</div>
-              <h3 className="font-semibold">Select Phone Brand</h3>
+          <section className="rounded-2xl border bg-card p-4 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-bold text-accent-foreground">1</span>
+              <div>
+                <h3 className="font-semibold">Choose your phone</h3>
+                <p className="text-xs text-muted-foreground">We will only show compatible models.</p>
+              </div>
             </div>
-
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowBrandDropdown(!showBrandDropdown);
-                  setShowModelDropdown(false);
-                }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 border border-border rounded-xl hover:border-accent transition-colors"
-              >
-                <span className={selectedBrand ? 'text-foreground' : 'text-muted-foreground'}>
-                  {selectedBrandData?.name || 'Choose brand...'}
-
-                </span>
-                <ChevronDown className={`w-5 h-5 transition-transform ${showBrandDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {showBrandDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute w-full mt-2 rounded-xl shadow-2xl overflow-hidden border border-border"
-                    style={{
-                      zIndex: 9999,
-                      isolation: 'isolate',
-                      backgroundColor: 'hsl(240 10% 8%)',
-                      backdropFilter: 'none'
-                    }}
-                  >
-                    <div className="p-2 border-b border-border" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search brands..."
-                          value={brandSearch}
-                          onChange={(e) => setBrandSearch(e.target.value)}
-                          className="pl-9"
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
-                      {filteredBrands.map((brand) => (
-                        <button
-                          key={brand.id}
-                          onClick={() => {
-                            setSelectedBrand(brand.id);
-                            setSelectedModel('');
-                            setShowBrandDropdown(false);
-                            setBrandSearch('');
-                          }}
-                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center justify-between text-foreground ${selectedBrand === brand.id ? 'bg-accent/10 text-accent' : ''
-                            }`}
-                        >
-                          <span>{brand.name}</span>
-                          <span className="text-xs text-muted-foreground">Brand</span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Step 2: Select Model */}
-          <div className={`bg-card border border-border p-6 rounded-2xl transition-opacity ${!selectedBrand ? 'opacity-50 pointer-events-none' : ''}`} style={{ overflow: 'visible' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">2</div>
-              <h3 className="font-semibold">Select Phone Model</h3>
-            </div>
-
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowModelDropdown(!showModelDropdown);
-                  setShowBrandDropdown(false);
-                }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 border border-border rounded-xl hover:border-accent transition-colors"
-              >
-                <span className={selectedModel ? 'text-foreground' : 'text-muted-foreground'}>
-                  {selectedModelData?.name || 'Choose model...'}
-
-                </span>
-                <ChevronDown className={`w-5 h-5 transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {showModelDropdown && selectedBrandData && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute w-full mt-2 rounded-xl shadow-2xl overflow-hidden border border-border"
-                    style={{
-                      zIndex: 9999,
-                      isolation: 'isolate',
-                      backgroundColor: 'hsl(240 10% 8%)',
-                      backdropFilter: 'none'
-                    }}
-                  >
-                    <div className="p-2 border-b border-border" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search models..."
-                          value={modelSearch}
-                          onChange={(e) => setModelSearch(e.target.value)}
-                          className="pl-9"
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto" style={{ backgroundColor: 'hsl(240 10% 8%)' }}>
-                      {filteredModels.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => {
-                            setSelectedModel(model.id);
-                            setShowModelDropdown(false);
-                            setModelSearch('');
-                          }}
-                          className={`w-full px-4 py-3 text-left hover:bg-muted transition-colors text-foreground ${selectedModel === model.id ? 'bg-accent/10 text-accent' : ''
-                            }`}
-                        >
-                          {model.name}
-                        </button>
-                      ))}
-
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Step 3: Select Cover Type */}
-          <div className={`bg-card border border-border p-6 rounded-2xl transition-opacity ${!selectedModel ? 'opacity-50 pointer-events-none' : ''}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">3</div>
-              <h3 className="font-semibold">Select Cover Type</h3>
-            </div>
-
-            <RadioGroup
-              value={selectedCoverType}
-              onValueChange={setSelectedCoverType}
-              className="grid gap-3"
-            >
-              {coverTypes.map((cover) => (
-                <Label
-                  key={cover.id}
-                  htmlFor={cover.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedCoverType === cover.id
-                      ? 'border-accent bg-accent/10'
-                      : 'border-border hover:border-muted-foreground/50'
-                    }`}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Brand</span>
+                <select
+                  value={selectedBrand}
+                  onChange={(event) => {
+                    setSelectedBrand(event.target.value);
+                    setSelectedModel('');
+                    setSelectedCoverType('');
+                  }}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <RadioGroupItem value={cover.id} id={cover.id} />
-                  <div className="flex-1">
-                    <p className="font-medium">{cover.name}</p>
-                    <p className="text-sm text-muted-foreground">{cover.description}</p>
-                  </div>
-                  <span className="font-bold text-accent">₹{cover.price}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </div>
+                  <option value="">Select brand</option>
+                  {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Model</span>
+                <select
+                  value={selectedModel}
+                  disabled={!selectedBrand}
+                  onChange={(event) => setSelectedModel(event.target.value)}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Select model</option>
+                  {models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
 
-          {/* Step 4: Upload Image */}
-          <div className={`bg-card border border-border p-6 rounded-2xl transition-opacity ${!selectedModel ? 'opacity-50 pointer-events-none' : ''}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">4</div>
-              <h3 className="font-semibold">Upload Your Photo</h3>
+          <section className={`rounded-2xl border bg-card p-4 transition-opacity sm:p-6 ${!selectedModel ? 'pointer-events-none opacity-50' : ''}`}>
+            <div className="mb-5 flex items-center gap-3">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-bold text-accent-foreground">2</span>
+              <div>
+                <h3 className="font-semibold">Confirm case type</h3>
+                <p className="text-xs text-muted-foreground">Availability can differ by phone model.</p>
+              </div>
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            {coverTypes.length === 1 ? (
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-accent/40 bg-accent/5 p-4">
+                <div className="min-w-0">
+                  <p className="font-semibold">{coverTypes[0].name}</p>
+                  {coverTypes[0].description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{coverTypes[0].description}</p>
+                  )}
+                </div>
+                <Check className="h-5 w-5 shrink-0 text-accent" />
+              </div>
+            ) : coverTypes.length > 1 ? (
+              <RadioGroup value={selectedCoverType} onValueChange={setSelectedCoverType} className="grid gap-3">
+                {coverTypes.map((cover) => (
+                  <Label
+                    key={cover.id}
+                    htmlFor={cover.id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${selectedCoverType === cover.id ? 'border-accent bg-accent/5' : 'hover:border-accent/40'}`}
+                  >
+                    <RadioGroupItem value={cover.id} id={cover.id} className="mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold">{cover.name}</p>
+                      {cover.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{cover.description}</p>}
+                    </div>
+                  </Label>
+                ))}
+              </RadioGroup>
+            ) : (
+              <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Select a phone model to load its case type.</p>
+            )}
+          </section>
 
-            {uploadedImage ? (
-              <div className="relative">
-                <img
-                  src={uploadedImage}
-                  alt="Uploaded"
-                  className="w-full aspect-video object-contain rounded-xl bg-muted/30"
-                />
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="w-4 h-4 mr-1" />
-                    Change
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={removeImage}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+          {allowsImage && (
+            <section className={`rounded-2xl border bg-card p-4 transition-opacity sm:p-6 ${!selectedModel ? 'pointer-events-none opacity-50' : ''}`}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-bold text-accent-foreground">3</span>
+                <div>
+                  <h3 className="font-semibold">Upload your design {requiresImage ? '' : '(optional)'}</h3>
+                  <p className="text-xs text-muted-foreground">Use a clear, high-resolution JPG or PNG.</p>
                 </div>
               </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/50 hover:bg-accent/5 transition-all"
-              >
-                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium">Click or drag to upload</p>
-                <p className="text-sm text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
-              </button>
-            )}
 
-            <div className="mt-4 p-3 bg-accent/10 rounded-lg">
-              <p className="text-xs text-muted-foreground flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                <span>For best results, use high-resolution images (at least 1200x1600 pixels). Your design will be printed edge-to-edge on the cover.</span>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              {uploadedImage ? (
+                <div className="relative overflow-hidden rounded-xl border bg-muted/30 p-3">
+                  <img src={uploadedImage} alt="Uploaded design" className="aspect-video w-full rounded-lg object-contain" />
+                  <div className="absolute right-5 top-5 flex gap-2">
+                    <Button type="button" size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mr-1 h-4 w-4" />Change
+                    </Button>
+                    <Button type="button" size="icon" variant="destructive" onClick={removeImage} aria-label="Remove uploaded image">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full rounded-xl border-2 border-dashed p-7 text-center transition hover:border-accent/60 hover:bg-accent/5 disabled:opacity-60"
+                >
+                  {uploading ? <Sparkles className="mx-auto mb-3 h-9 w-9 animate-pulse text-accent" /> : <Upload className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />}
+                  <p className="font-medium">{uploading ? 'Uploading…' : 'Choose an image'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Up to {settings?.max_upload_mb || 10}MB</p>
+                </button>
+              )}
+              <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                {settings?.instructions_text || `Recommended size: ${settings?.min_image_width || 1200} × ${settings?.min_image_height || 1600}px.`}
               </p>
-            </div>
-          </div>
+            </section>
+          )}
 
-          {/* Step 5: Special Instructions */}
-          <div className={`bg-card border border-border p-6 rounded-2xl transition-opacity ${!selectedModel ? 'opacity-50 pointer-events-none' : ''}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">5</div>
-              <h3 className="font-semibold">Special Instructions (Optional)</h3>
+          <section className={`rounded-2xl border bg-card p-4 transition-opacity sm:p-6 ${!selectedModel ? 'pointer-events-none opacity-50' : ''}`}>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-bold text-accent-foreground">{instructionStep}</span>
+              <div>
+                <h3 className="font-semibold">Order notes <span className="font-normal text-muted-foreground">(optional)</span></h3>
+                <p className="text-xs text-muted-foreground">Add placement or printing instructions for our team.</p>
+              </div>
             </div>
-
             <Textarea
-              placeholder="Add any special instructions for your order (e.g., specific placement, color adjustments, text to add...)"
+              placeholder="For example: keep faces centered and avoid cropping the top edge."
               value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value.slice(0, 500))}
-              className="min-h-[100px] resize-none"
+              onChange={(event) => setSpecialInstructions(event.target.value.slice(0, 500))}
+              className="min-h-24 resize-none"
               maxLength={500}
             />
-
-            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-              <p className="flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                Tell us how you'd like your design customized
-              </p>
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" />Shared with production</span>
               <span>{specialInstructions.length}/500</span>
             </div>
-          </div>
+          </section>
         </motion.div>
       </div>
     </div>

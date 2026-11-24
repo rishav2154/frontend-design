@@ -67,7 +67,7 @@ const Account = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex min-h-dvh min-h-dvh items-center justify-center bg-background px-4">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
       </div>
     );
@@ -75,11 +75,11 @@ const Account = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
         <Navbar />
         <CartDrawer />
-        <main className="pt-24 pb-32">
-          <div className="container mx-auto px-4 max-w-md text-center">
+        <main className="pb-24 pt-20 sm:pb-32 sm:pt-24">
+          <div className="container mx-auto max-w-md px-3 text-center min-[360px]:px-4">
             <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center mb-6">
               <User className="w-10 h-10 text-muted-foreground" />
             </div>
@@ -101,12 +101,12 @@ const Account = () => {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-32">
-        <div className="container mx-auto px-4 max-w-lg">
+      <main className="pb-24 pt-20 sm:pb-32 sm:pt-24">
+        <div className="container mx-auto max-w-lg px-3 min-[360px]:px-4">
 
           {/* Profile Section */}
           {editingProfile ? (
@@ -118,32 +118,33 @@ const Account = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-6 mb-6"
+              className="glass-card mb-6 rounded-2xl p-4 min-[360px]:p-5 sm:p-6"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
+              <div className="flex min-w-0 items-start gap-3 min-[360px]:items-center min-[360px]:gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent/20 min-[360px]:h-16 min-[360px]:w-16">
                   <span className="text-xl font-bold text-accent">
                     {initials}
                   </span>
                 </div>
 
-                <div className="flex-1">
-                  <h1 className="text-xl font-bold">{displayName}</h1>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Mail className="w-4 h-4" />
-                    {user.email}
+                <div className="min-w-0 flex-1">
+                  <h1 className="break-words text-lg font-bold min-[360px]:text-xl">{displayName}</h1>
+                  <div className="mt-1 flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span className="min-w-0 break-all">{user.email}</span>
                   </div>
                   {user.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="w-4 h-4" />
-                      {user.phone}
+                    <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+                      <Phone className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="min-w-0 break-all">{user.phone}</span>
                     </div>
                   )}
                 </div>
 
                 <button
                   onClick={() => setEditingProfile(true)}
-                  className="p-2 rounded-xl bg-muted hover:bg-muted/70"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted hover:bg-muted/70"
+                  aria-label="Edit profile"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -160,19 +161,19 @@ const Account = () => {
             animate={{ opacity: 1 }}
             className="glass-card rounded-2xl overflow-hidden mb-6"
           >
-            <Link to="/orders" className="flex items-center p-4 border-b">
+            <Link to="/orders" className="flex min-h-12 items-center p-4 border-b">
               <Package className="w-5 h-5 mr-3 text-accent" />
               My Orders
               <ChevronRight className="ml-auto w-4 h-4" />
             </Link>
 
-            <Link to="/wishlist" className="flex items-center p-4 border-b">
+            <Link to="/wishlist" className="flex min-h-12 items-center p-4 border-b">
               <Heart className="w-5 h-5 mr-3 text-accent" />
               Wishlist
               <ChevronRight className="ml-auto w-4 h-4" />
             </Link>
 
-            <Link to="/cart" className="flex items-center p-4">
+            <Link to="/cart" className="flex min-h-12 items-center p-4">
               <ShoppingBag className="w-5 h-5 mr-3 text-accent" />
               Cart
               <ChevronRight className="ml-auto w-4 h-4" />
@@ -182,7 +183,7 @@ const Account = () => {
           <Button
             variant="outline"
             onClick={handleLogout}
-            className="w-full text-destructive"
+            className="min-h-11 w-full text-destructive"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out

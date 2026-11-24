@@ -157,15 +157,15 @@ const AdminCoupons = () => {
       <div className="space-y-6">
 
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Coupons</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">Coupons</h1>
             <p className="text-muted-foreground">Manage discount coupons</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 w-4 h-4" />
                 Add Coupon
               </Button>
@@ -245,53 +245,108 @@ const AdminCoupons = () => {
             {loading ? (
               <Loader2 className="animate-spin" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
+              <>
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
 
-                <TableBody>
+                    <TableBody>
+                      {coupons.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-mono">
+                            {c.code}
+                          </TableCell>
+                          <TableCell>
+                            <Badge>{c.discount_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {c.discount_type === 'percentage'
+                              ? `${c.discount_value}%`
+                              : `₹${c.discount_value}`}
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={c.is_active}
+                              onCheckedChange={() => toggleActive(c)}
+                            />
+                          </TableCell>
+                          <TableCell className="flex gap-2">
+                            <Button size="sm" onClick={() => handleEdit(c)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(c.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="space-y-3 md:hidden">
                   {coupons.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-mono">
-                        {c.code}
-                      </TableCell>
-                      <TableCell>
-                        <Badge>{c.discount_type}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {c.discount_type === 'percentage'
-                          ? `${c.discount_value}%`
-                          : `₹${c.discount_value}`}
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={c.is_active}
-                          onCheckedChange={() => toggleActive(c)}
-                        />
-                      </TableCell>
-                      <TableCell className="flex gap-2">
-                        <Button size="sm" onClick={() => handleEdit(c)}>
-                          <Pencil className="w-4 h-4" />
+                    <article key={c.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="break-all font-mono text-lg font-semibold">{c.code}</h3>
+                          {c.description && (
+                            <p className="mt-1 break-words text-sm text-muted-foreground">{c.description}</p>
+                          )}
+                        </div>
+                        <Badge className="shrink-0">{c.discount_type}</Badge>
+                      </div>
+
+                      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Value</dt>
+                          <dd className="mt-1 font-semibold">
+                            {c.discount_type === 'percentage' ? `${c.discount_value}%` : `₹${c.discount_value}`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Valid until</dt>
+                          <dd className="mt-1 break-words font-medium">
+                            {c.valid_until ? new Date(c.valid_until).toLocaleDateString('en-IN') : 'No expiry'}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-muted/50 p-3">
+                        <span className="text-sm font-medium">Active</span>
+                        <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c)} />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2 border-t pt-4">
+                        <Button variant="outline" className="min-h-11" onClick={() => handleEdit(c)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
                         </Button>
                         <Button
-                          size="sm"
-                          variant="ghost"
+                          variant="outline"
+                          className="min-h-11 text-destructive hover:text-destructive"
                           onClick={() => handleDelete(c.id)}
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
                         </Button>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </article>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

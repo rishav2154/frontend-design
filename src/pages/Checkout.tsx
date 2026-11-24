@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CouponInput } from "@/components/cart/CouponInput";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,18 +30,22 @@ const Checkout = () => {
   const {
     items,
     getTotalPrice,
+    getDiscount,
     clearCart,
-    appliedCoupon
+    appliedCoupon,
+    appliedCoupons,
   } = useCartStore();
 
 
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("online");
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "partial" | "cod">("online");
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   // Temporary OTP bypass: set VITE_OTP_VERIFICATION_REQUIRED=false to let
   // customers order with just their phone number, without verification.
   const otpRequired =
     import.meta.env.VITE_OTP_VERIFICATION_REQUIRED !== "false";
+  const phoneVerificationRequired = otpRequired && paymentMethod !== "cod";
 
   // OTP states
   const [otpSent, setOtpSent] = useState(false);
@@ -112,6 +117,17 @@ const Checkout = () => {
 
   const subtotal =
     getTotalPrice();
+
+  const discount = getDiscount();
+  const discountedSubtotal = subtotal - discount;
+  const activeCoupons = appliedCoupons.length
+    ? appliedCoupons
+    : appliedCoupon
+      ? [appliedCoupon]
+      : [];
+  const shipping = activeCoupons.some((coupon) => coupon.discountType === "free_shipping") || subtotal > 500 ? 0 : 50;
+  const gst = discountedSubtotal * 0.08;
+  const total = discountedSubtotal + shipping + gst;
 
 
   /* ===============================
@@ -297,21 +313,8 @@ const Checkout = () => {
 
   const PARTIAL_PREPAID_PERCENT = 50;
 
-  const computeFinalAmount = () => {
-
-    const shipping = 50;
-
-    const tax = Number((subtotal * 0.08).toFixed(2));
-
-    const discount = appliedCoupon
-      ? Number(appliedCoupon.discount || 0)
-      : 0;
-
-    return Number(
-      (subtotal + shipping + tax - discount).toFixed(2)
-    );
-
-  };
+  const computeFinalAmount = () =>
+    Number(total.toFixed(2));
 
   const handleRazorpayPayment = async (mode: "online" | "partial") => {
 
@@ -407,7 +410,8 @@ const Checkout = () => {
                   state: address.state,
                   pincode: address.pincode
                 },
-                coupon: appliedCoupon?.code || null,
+                coupon: activeCoupons[0]?.code || null,
+                coupons: activeCoupons.map((coupon) => coupon.code),
                 payment_method: mode,
                 payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
@@ -452,6 +456,41 @@ const Checkout = () => {
 
   };
 
+  const handleCashOnDelivery = async () => {
+    setPlacingOrder(true);
+    try {
+      const res = await apiFetch(endpoints.checkout.checkout, {
+        method: "POST",
+        body: JSON.stringify({
+          items,
+          shipping_address: {
+            full_name: address.fullName,
+            phone: address.phone,
+            address_line1: address.addressLine1,
+            address_line2: address.addressLine2,
+            city: address.city,
+            state: address.state,
+            pincode: address.pincode,
+          },
+          coupon: activeCoupons[0]?.code || null,
+          coupons: activeCoupons.map((coupon) => coupon.code),
+          payment_method: "cod",
+        }),
+      });
+
+      clearCart();
+      navigate(`/order-success/${res.order_id}`);
+    } catch (err: any) {
+      toast({
+        title: "Could not place COD order",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
 
   /* ===============================
      PLACE ORDER
@@ -461,7 +500,7 @@ const Checkout = () => {
 
     if (!validateForm()) return;
 
-    if (otpRequired && !phoneVerified)
+    if (phoneVerificationRequired && !phoneVerified)
       return toast({
         title: "Phone Not Verified",
         description: "Verify phone first",
@@ -475,6 +514,9 @@ const Checkout = () => {
     if (paymentMethod === "partial")
       return handleRazorpayPayment("partial");
 
+    if (paymentMethod === "cod")
+      return handleCashOnDelivery();
+
   };
 
 
@@ -484,7 +526,7 @@ const Checkout = () => {
 
   if (checkingAuth)
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-dvh min-h-dvh items-center justify-center px-4">
         <Loader2 className="animate-spin" />
       </div>
     );
@@ -496,34 +538,34 @@ const Checkout = () => {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-gradient-to-br from-background via-background to-muted/30">
 
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-16 container mx-auto px-4 max-w-7xl">
+      <main className="container mx-auto max-w-7xl px-3 pb-12 pt-20 min-[360px]:px-4 sm:pb-16 sm:pt-24">
 
         <button
           onClick={() => navigate("/cart")}
-          className="flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground transition"
+          className="mb-6 flex min-h-11 items-center gap-2 text-muted-foreground transition hover:text-foreground sm:mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Cart
         </button>
 
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-3 lg:gap-8">
 
 
           {/* ================= ADDRESS ================= */}
 
-          <div className="lg:col-span-2 glass-card p-8 rounded-2xl shadow-sm">
+          <div className="glass-card min-w-0 rounded-2xl p-4 shadow-sm min-[360px]:p-5 sm:p-8 lg:col-span-2">
             {/* ================= SAVED ADDRESSES ================= */}
             {savedAddresses.length > 0 && (
-              <div className="glass-card p-6 rounded-2xl shadow-sm">
+              <div className="glass-card mb-6 min-w-0 rounded-2xl p-4 shadow-sm min-[360px]:p-5 sm:p-6">
 
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                <div className="mb-5 flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/20">
                     <BookMarked className="w-5 h-5 text-accent" />
                   </div>
                   <h2 className="text-xl font-semibold">Saved Addresses</h2>
@@ -535,22 +577,22 @@ const Checkout = () => {
                       key={addr.id}
                       type="button"
                       onClick={() => selectSavedAddress(addr)}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${selectedSavedAddress === addr.id
+                      className={`min-h-11 w-full rounded-xl border-2 p-3 text-left transition-all duration-200 min-[360px]:p-4 ${selectedSavedAddress === addr.id
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-accent/50"
                         }`}
                     >
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-start justify-between gap-3 min-[360px]:gap-4">
 
-                        <div>
-                          <p className="font-medium text-sm">{addr.full_name}</p>
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium">{addr.full_name}</p>
 
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 break-words text-xs text-muted-foreground">
                             {addr.address_line1}
                             {addr.address_line2 ? `, ${addr.address_line2}` : ""}
                           </p>
 
-                          <p className="text-xs text-muted-foreground">
+                          <p className="break-words text-xs text-muted-foreground">
                             {addr.city}, {addr.state} - {addr.pincode}
                           </p>
 
@@ -586,7 +628,7 @@ const Checkout = () => {
                         pincode: ""
                       });
                     }}
-                    className={`w-full text-left p-4 rounded-xl border-2 border-dashed transition-all ${selectedSavedAddress === null
+                    className={`min-h-11 w-full rounded-xl border-2 border-dashed p-3 text-left transition-all min-[360px]:p-4 ${selectedSavedAddress === null
                         ? "border-accent bg-accent/10"
                         : "border-border hover:border-accent/50"
                       }`}
@@ -597,7 +639,7 @@ const Checkout = () => {
                 </div>
               </div>
             )}
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="mb-5 text-xl font-bold min-[360px]:text-2xl sm:mb-6">
               Shipping Address
             </h2>
 
@@ -634,10 +676,13 @@ const Checkout = () => {
               </Label>
 
 
-              <div className="flex gap-2 mt-1">
+              <div className="mt-1 flex min-w-0 flex-col gap-2 min-[420px]:flex-row">
 
                 <Input
-                  className="h-11"
+                  className="h-11 min-w-0 flex-1"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="10-digit mobile number"
                   value={address.phone}
                   disabled={phoneVerified}
                   onChange={(e) =>
@@ -649,12 +694,12 @@ const Checkout = () => {
                 />
 
 
-                {otpRequired && !phoneVerified && (
+                {phoneVerificationRequired && !phoneVerified && (
 
                   <Button
                     type="button"
                     variant="secondary"
-                    className="h-11"
+                    className="h-11 w-full shrink-0 min-[420px]:w-auto"
                     onClick={handleSendOtp}
                     disabled={otpLoading}
                   >
@@ -671,19 +716,19 @@ const Checkout = () => {
 
 
 
-              {otpRequired && otpSent && !phoneVerified && (
+              {phoneVerificationRequired && otpSent && !phoneVerified && (
 
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex min-w-0 flex-col gap-2 min-[420px]:flex-row">
 
                   <Input
-                    className="h-11"
+                    className="h-11 min-w-0 flex-1"
                     placeholder="Enter OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                   />
 
                   <Button
-                    className="h-11"
+                    className="h-11 w-full shrink-0 min-[420px]:w-auto"
                     onClick={handleVerifyOtp}
                   >
 
@@ -706,10 +751,12 @@ const Checkout = () => {
               )}
 
 
-              {!otpRequired && (
+              {!phoneVerificationRequired && (
 
                 <p className="text-muted-foreground text-sm mt-2">
-                  Phone verification is temporarily disabled.
+                  {paymentMethod === "cod"
+                    ? "Phone OTP verification is not required for full Cash on Delivery."
+                    : "Phone verification is temporarily disabled."}
                 </p>
 
               )}
@@ -757,12 +804,12 @@ const Checkout = () => {
 
           {/* ================= PAYMENT & SUMMARY ================= */}
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
 
 
             {/* PAYMENT CARD */}
 
-            <div className="glass-card p-6 rounded-2xl shadow-sm">
+            <div className="glass-card min-w-0 rounded-2xl p-4 shadow-sm min-[360px]:p-5 sm:p-6">
 
               <h3 className="text-xl font-bold mb-4">
                 Payment Method
@@ -778,24 +825,24 @@ const Checkout = () => {
 
                 {/* ONLINE */}
 
-                <label className={`flex items-center justify-between border rounded-xl p-4 cursor-pointer transition
+                <label className={`flex min-h-11 min-w-0 cursor-pointer items-start justify-between rounded-xl border p-3 transition min-[360px]:p-4
 
 ${paymentMethod === "online"
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/30"
                   }`}>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
 
-                    <RadioGroupItem value="online" />
+                    <RadioGroupItem value="online" className="mt-0.5 shrink-0" />
 
-                    <div>
+                    <div className="min-w-0">
 
-                      <p className="font-medium">
+                      <p className="break-words font-medium">
                         Pay Online
                       </p>
 
-                      <p className="text-sm text-muted-foreground">
+                      <p className="break-words text-sm text-muted-foreground">
                         Secure payment via Razorpay
                       </p>
 
@@ -809,25 +856,54 @@ ${paymentMethod === "online"
 
                 {/* PARTIAL (50% now + 50% COD) */}
 
-                <label className={`flex items-center justify-between border rounded-xl p-4 cursor-pointer transition
+                <label className={`flex min-h-11 min-w-0 cursor-pointer items-start justify-between rounded-xl border p-3 transition min-[360px]:p-4
 
 ${paymentMethod === "partial"
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/30"
                   }`}>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
 
-                    <RadioGroupItem value="partial" />
+                    <RadioGroupItem value="partial" className="mt-0.5 shrink-0" />
 
-                    <div>
+                    <div className="min-w-0">
 
-                      <p className="font-medium">
+                      <p className="break-words font-medium">
                         Pay 50% Now, 50% on Delivery
                       </p>
 
-                      <p className="text-sm text-muted-foreground">
+                      <p className="break-words text-sm text-muted-foreground">
                         Pay half online now, rest as cash on delivery
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </label>
+
+                {/* FULL CASH ON DELIVERY */}
+
+                <label className={`flex min-h-11 min-w-0 cursor-pointer items-start justify-between rounded-xl border p-3 transition min-[360px]:p-4
+
+${paymentMethod === "cod"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/30"
+                  }`}>
+
+                  <div className="flex min-w-0 items-start gap-3">
+
+                    <RadioGroupItem value="cod" className="mt-0.5 shrink-0" />
+
+                    <div className="min-w-0">
+
+                      <p className="break-words font-medium">
+                        Full Cash on Delivery
+                      </p>
+
+                      <p className="break-words text-sm text-muted-foreground">
+                        Pay the complete order amount when it is delivered
                       </p>
 
                     </div>
@@ -845,11 +921,16 @@ ${paymentMethod === "partial"
 
             {/* ORDER SUMMARY */}
 
-            <div className="glass-card p-6 rounded-2xl shadow-sm">
+            <div className="glass-card min-w-0 rounded-2xl p-4 shadow-sm min-[360px]:p-5 sm:p-6">
 
               <h3 className="text-xl font-bold mb-4">
                 Order Summary
               </h3>
+
+              <div className="mb-5 rounded-xl border border-border bg-muted/20 p-3">
+                <p className="mb-2 text-sm font-medium">Have a coupon?</p>
+                <CouponInput />
+              </div>
 
 
               <div className="space-y-3 text-sm">
@@ -859,48 +940,49 @@ ${paymentMethod === "partial"
                   <span>₹{subtotal.toFixed(2)}</span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>₹50.00</span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span>GST</span>
-                  <span>₹{(subtotal * 0.08).toFixed(2)}</span>
-                </div>
-
-
-                {appliedCoupon && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-₹{appliedCoupon.discount}</span>
+                {discount > 0 && (
+                  <div className="flex min-w-0 justify-between gap-3 text-green-600">
+                    <span className="min-w-0 break-words">Discount ({activeCoupons.map((coupon) => coupon.code).join(', ')})</span>
+                    <span className="shrink-0">-₹{discount.toFixed(2)}</span>
                   </div>
                 )}
 
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+                  <span className={shipping === 0 ? "text-green-600" : ""}>
+                    {shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}
+                  </span>
+                </div>
 
-                <div className="border-t pt-3 flex justify-between font-bold text-lg">
+                <div className="flex justify-between">
+                  <span>GST (8%)</span>
+                  <span>₹{gst.toFixed(2)}</span>
+                </div>
+
+
+                <div className="flex items-baseline justify-between gap-3 border-t pt-3 text-base font-bold min-[360px]:text-lg">
 
                   <span>Total</span>
 
-                  <span>
-
-                    ₹{(
-                      subtotal
-                      + 50
-                      + (subtotal * 0.08)
-                      - (appliedCoupon?.discount || 0)
-                    ).toFixed(2)}
-
+                  <span className="min-w-0 break-words text-right">
+                    ₹{total.toFixed(2)}
                   </span>
                 </div>
               </div>
               <Button
                 onClick={handlePlaceOrder}
+                disabled={placingOrder}
                 className="w-full mt-6 h-12 text-base font-semibold"
               >
-                {paymentMethod === "partial"
-                  ? "Pay 50% & Place Order"
-                  : "Pay & Place Order"}
+                {placingOrder ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Placing Order…</>
+                ) : paymentMethod === "partial" ? (
+                  "Pay 50% & Place Order"
+                ) : paymentMethod === "cod" ? (
+                  "Place Cash on Delivery Order"
+                ) : (
+                  "Pay & Place Order"
+                )}
 
               </Button>
             </div>

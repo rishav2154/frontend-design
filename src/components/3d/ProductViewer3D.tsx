@@ -969,7 +969,7 @@ function Scene({ productType, color, customImage, customText, textColor, imageTr
         penumbra={1} 
         intensity={1.8} 
         castShadow 
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0001}
       />
       <spotLight 
@@ -1100,13 +1100,13 @@ export default function ProductViewer3D({
   imageTransform
 }: ProductViewer3DProps) {
   return (
-    <div className="relative w-full h-full min-h-[450px] rounded-3xl overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/20">
+    <div className="relative h-[340px] w-full min-w-0 overflow-hidden rounded-3xl bg-gradient-to-br from-muted/30 via-background to-muted/20 sm:h-full sm:min-h-[450px]">
       {/* Subtle grid pattern overlay */}
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
       
       <Canvas
         camera={{ position: [0, 0, 7], fov: 38 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         gl={{ 
           antialias: true, 
           alpha: true,

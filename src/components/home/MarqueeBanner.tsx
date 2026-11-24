@@ -1,35 +1,44 @@
-import { Truck, RotateCcw, Shield, Gift, CreditCard, Clock } from "lucide-react";
+import { Check, Image, ShieldCheck, Smartphone } from 'lucide-react';
 
-const features = [
-  { icon: Truck, text: "Free Delivery", sub: "On ₹999+" },
-  { icon: RotateCcw, text: "Easy Returns", sub: "7 day policy" },
-  { icon: Shield, text: "Secure Pay", sub: "100% safe" },
-  { icon: Gift, text: "Gift Wrap", sub: "Available" },
-  { icon: CreditCard, text: "COD", sub: "Available" },
-  { icon: Clock, text: "Fast Ship", sub: "3-5 days" },
+const promises = [
+  {
+    icon: Smartphone,
+    title: 'Exact model first',
+    description: 'Choose the phone and finish before ordering.',
+  },
+  {
+    icon: Image,
+    title: 'Your image, your way',
+    description: 'Upload a photo and see it in the preview.',
+  },
+  {
+    icon: Check,
+    title: 'Review every detail',
+    description: 'Keep choices visible before adding to cart.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Protected checkout',
+    description: 'Complete the order through secure checkout.',
+  },
 ];
 
 export const MarqueeBanner = () => {
   return (
-    <div className="bg-muted/40 border-y border-border py-3 sm:py-4">
-      <div className="container mx-auto px-2">
-        <div className="flex items-center justify-between gap-2 sm:gap-4 overflow-x-auto scrollbar-hide">
-          {features.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 min-w-fit px-2 sm:px-3"
-            >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/8 flex items-center justify-center shrink-0 border border-accent/10">
-                <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
-              </div>
-              <div>
-                <p className="text-[11px] sm:text-xs font-semibold text-foreground leading-tight">{item.text}</p>
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-tight">{item.sub}</p>
-              </div>
+    <section className="home-promise-strip relative -mt-5 px-4 pb-5 sm:-mt-8 sm:px-6 lg:px-8" aria-label="How ordering works">
+      <div className="home-shell">
+        <div className="home-promise-rail liquid-glass-raised grid grid-cols-2 md:grid-cols-4">
+          {promises.map((item) => (
+            <div key={item.title} className="home-promise-item flex min-h-[136px] flex-col justify-center px-4 py-5 sm:min-h-[148px] sm:px-6">
+              <span className="home-promise-icon mb-3">
+                <item.icon className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" />
+              </span>
+              <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-foreground sm:text-xs">{item.title}</p>
+              <p className="mt-1.5 max-w-[15rem] text-[10px] leading-[1.65] text-foreground/55 sm:text-[11px]">{item.description}</p>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };

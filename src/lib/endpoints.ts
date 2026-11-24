@@ -16,7 +16,7 @@
  * Version: increment API_VERSION whenever the endpoint contract changes.
  */
 
-export const API_VERSION = "1.0.0";
+export const API_VERSION = "1.1.0";
 
 export const API_BASE = (
   import.meta.env.VITE_API_URL || "https://api.thedesignhive.tech"
@@ -90,6 +90,28 @@ export const endpoints = {
     products: "/api/admin/products",
     product: (id: string) => `/api/admin/products/${id}`,
     productStatus: (id: string) => `/api/admin/products/${id}/status`,
+
+    phoneCover: {
+      brands: "/api/admin/phone-cover/brands",
+      brand: (id: string) => `/api/admin/phone-cover/brands/${id}`,
+      models: "/api/admin/phone-cover/models",
+      model: (id: string) => `/api/admin/phone-cover/models/${id}`,
+      coverTypes: "/api/admin/phone-cover/cover-types",
+      coverType: (id: string) => `/api/admin/phone-cover/cover-types/${id}`,
+      modelCoverTypes: (modelId: string) =>
+        `/api/admin/phone-cover/models/${modelId}/cover-types`,
+      catalogProducts: "/api/admin/phone-cover/products",
+      catalogProduct: (productId: string) =>
+        `/api/admin/phone-cover/products/${productId}`,
+      productModels: (productId: string) =>
+        `/api/admin/phone-cover/products/${productId}/models`,
+      settings: "/api/admin/phone-cover/settings",
+    },
+
+    banners: "/api/admin/banners",
+    banner: (id: string) => `/api/admin/banners/${id}`,
+    bannerToggle: (id: string) => `/api/admin/banners/${id}/toggle`,
+    bannerSettings: "/api/admin/banners/settings",
   },
 
   /* ---------------- PRODUCTS ---------------- */
@@ -138,9 +160,16 @@ export const endpoints = {
 
   /* ---------------- PHONE COVER EDITOR ---------------- */
   phoneCover: {
+    catalog: "/api/phone-covers/catalog",
     brands: "/api/brands",
     models: (brandId: string) => `/api/models/${brandId}`,
     coverTypes: (modelId: string) => `/api/cover-types/${modelId}`,
+  },
+
+  /* ---------------- ADVERTISEMENT BANNERS ---------------- */
+  banners: {
+    list: "/api/banners",
+    events: (id: string) => `/api/banners/${id}/events`,
   },
 
   /* ---------------- UPLOAD ---------------- */

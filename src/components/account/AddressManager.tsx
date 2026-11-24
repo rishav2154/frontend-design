@@ -200,15 +200,15 @@ export const AddressManager = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card rounded-2xl p-5 mb-6"
+      className="glass-card mb-6 min-w-0 rounded-2xl p-4 min-[360px]:p-5"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-accent" />
-          <h2 className="text-lg font-bold">Saved Addresses</h2>
+      <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <MapPin className="h-5 w-5 shrink-0 text-accent" />
+          <h2 className="break-words text-base font-bold min-[360px]:text-lg">Saved Addresses</h2>
         </div>
         {!showForm && (
-          <Button variant="ghost" size="sm" onClick={handleAdd}>
+          <Button variant="ghost" size="sm" onClick={handleAdd} className="min-h-11 shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Add
           </Button>
         )}
@@ -228,21 +228,26 @@ export const AddressManager = () => {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="p-4 bg-muted/30 rounded-xl mb-4 space-y-3">
-                  <div className="flex justify-between">
+                <div className="mb-4 space-y-3 rounded-xl bg-muted/30 p-3 min-[360px]:p-4">
+                  <div className="flex min-w-0 items-center justify-between gap-2">
                     <p className="font-medium text-sm">
                       {editingId ? 'Edit Address' : 'New Address'}
                     </p>
-                    <button onClick={handleCancel}>
+                    <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg hover:bg-muted"
+                      aria-label="Close address form"
+                    >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                     {Object.entries(form).map(([key, value]) => (
                       <div
                         key={key}
-                        className={key.includes('address') ? 'col-span-2' : ''}
+                        className={key.includes('address') ? 'min-[420px]:col-span-2' : ''}
                       >
                         <Label className="text-xs capitalize">
                           {key.replace(/_/g, ' ')} *
@@ -252,18 +257,18 @@ export const AddressManager = () => {
                           onChange={(e) =>
                             setForm({ ...form, [key]: e.target.value })
                           }
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 h-11 min-w-0 text-sm"
                         />
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-col gap-2 pt-1 min-[360px]:flex-row">
                     <Button
                       onClick={handleSave}
                       disabled={saving}
                       size="sm"
-                      className="flex-1"
+                      className="min-h-11 flex-1"
                     >
                       {saving && (
                         <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
@@ -274,6 +279,7 @@ export const AddressManager = () => {
                       variant="outline"
                       size="sm"
                       onClick={handleCancel}
+                      className="min-h-11"
                     >
                       Cancel
                     </Button>
@@ -292,30 +298,31 @@ export const AddressManager = () => {
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className="p-4 bg-muted/20 rounded-xl relative"
+                  className="relative min-w-0 rounded-xl bg-muted/20 p-3 min-[360px]:p-4"
                 >
                   {addr.is_default === 1 && (
-                    <span className="absolute top-3 right-3 text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
+                    <span className="mb-2 inline-block rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent min-[420px]:absolute min-[420px]:right-3 min-[420px]:top-3 min-[420px]:mb-0">
                       Default
                     </span>
                   )}
 
-                  <p className="font-medium text-sm">{addr.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="break-words text-sm font-medium min-[420px]:pr-20">{addr.full_name}</p>
+                  <p className="break-words text-xs text-muted-foreground">
                     {addr.address_line1}
                     {addr.address_line2 ? `, ${addr.address_line2}` : ''}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="break-words text-xs text-muted-foreground">
                     {addr.city}, {addr.state} - {addr.pincode}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="break-words text-xs text-muted-foreground">
                     📞 {addr.phone}
                   </p>
 
-                  <div className="flex gap-2 mt-3">
+                  <div className="mt-3 flex flex-wrap gap-1 min-[360px]:gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="min-h-11 px-2 min-[360px]:px-3"
                       onClick={() => handleEdit(addr)}
                     >
                       <Pencil className="w-3 h-3 mr-1" /> Edit
@@ -323,6 +330,7 @@ export const AddressManager = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="min-h-11 px-2 min-[360px]:px-3"
                       onClick={() => handleDelete(addr.id)}
                       disabled={deletingId === addr.id}
                     >
@@ -337,6 +345,7 @@ export const AddressManager = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="min-h-11 px-2 min-[360px]:px-3"
                         onClick={() => handleSetDefault(addr.id)}
                       >
                         <Check className="w-3 h-3 mr-1" /> Set Default

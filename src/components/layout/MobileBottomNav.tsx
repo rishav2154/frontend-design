@@ -1,91 +1,122 @@
 import { motion } from 'framer-motion';
-import { Home, ShoppingBag, Store, User, Heart } from 'lucide-react';
+import { Heart, Home, ShoppingBag, Sparkles, Store } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { shouldShowMobileBottomNav } from '@/lib/mobileNavigation';
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Store, label: 'Shop', path: '/shop' },
+  { icon: Sparkles, label: 'Studio', path: '/customize-phone-cover', emphasized: true },
   { icon: Heart, label: 'Wishlist', path: '/wishlist' },
   { icon: ShoppingBag, label: 'Cart', path: '/cart' },
-  { icon: User, label: 'Account', path: '/account' },
 ];
 
 export const MobileBottomNav = () => {
   const location = useLocation();
   const totalItems = useCartStore((state) => state.getTotalItems());
   const wishlistItems = useWishlistStore((state) => state.items);
+  const isLanding = location.pathname === '/';
 
-  // Hide on admin pages
-  if (location.pathname.startsWith('/admin')) return null;
+  if (!shouldShowMobileBottomNav(location.pathname)) return null;
 
   return (
-    <motion.nav 
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-xl border-t border-border/50 shadow-2xl shadow-black/10"
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className={`fixed inset-x-0 bottom-0 z-40 md:hidden ${isLanding ? 'home-editorial-surface home-mobile-nav-wrap' : ''}`}
     >
-      <div className="glass-card-hover flex items-center justify-around h-16 px-2">
-        {navItems.map((item, index) => {
-          const isActive = location.pathname === item.path;
-          const showCartBadge = item.label === 'Cart' && totalItems > 0;
-          const showWishlistBadge = item.label === 'Wishlist' && wishlistItems.length > 0;
+      <nav
+        className={`${isLanding ? 'home-mobile-nav-surface' : 'border-t border-border/50 bg-background/95 shadow-2xl backdrop-blur-xl'} mx-auto max-w-xl`}
+        aria-label="Mobile navigation"
+      >
+        <div className="grid h-16 grid-cols-5 items-end px-1">
+          {navItems.map((item) => {
+            const isActive = item.path === '/customize-phone-cover'
+              ? location.pathname.startsWith(item.path)
+              : location.pathname === item.path;
+            const count = item.label === 'Cart'
+              ? totalItems
+              : item.label === 'Wishlist'
+                ? wishlistItems.length
+                : 0;
+            const hasBadge = count > 0;
 
-          return (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={`group relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-300 ${
-                isActive 
-                  ? 'text-accent scale-[1.05]' 
-                  : 'text-muted-foreground hover:text-foreground group-hover:scale-[1.02]'
-              }`}
-            >
-              {/* Active indicator - smooth slide */}
-              {isActive && (
-                <motion.div 
-                  layoutId="activeNavIndicator"
-                  className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-gradient-to-r from-accent via-accent/80 to-transparent rounded-full shadow-lg"
-                  style={{ originX: 0.5 }}
-                />
-              )}
-              
-              <div className="relative p-1.5 rounded-full group-hover:bg-accent/10 transition-colors">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+            if (item.emphasized) {
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className="group relative flex h-full min-w-0 flex-col items-center justify-end gap-1 pb-1.5"
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label="Open the custom case studio"
                 >
-                  <item.icon className={`w-5.5 h-5.5 transition-all duration-200 ${isActive ? 'stroke-[2.5] drop-shadow-sm shadow-accent/50' : ''}`} />
-                </motion.div>
-                
-                {/* Dynamic badges */}
-                {(showCartBadge || showWishlistBadge) && (
-                  <motion.span 
-                    initial={{ scale: 0, y: -4 }}
-                    animate={{ scale: 1, y: 0 }}
-                    className="absolute -top-3 -right-3 w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full shadow-md border-2 border-background"
+                  <motion.span
+                    whileTap={{ scale: 0.94 }}
+                    className={`grid h-14 w-14 -translate-y-2 place-items-center rounded-full border-[5px] shadow-lg transition-transform group-hover:-translate-y-2.5 ${
+                      isLanding
+                        ? 'home-studio-action'
+                        : 'border-background bg-accent-gradient text-accent-foreground shadow-accent/25'
+                    } ${isActive ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : ''}`}
                   >
-                    {showCartBadge ? totalItems : wishlistItems.length}
+                    <item.icon className="h-5 w-5" strokeWidth={2.4} aria-hidden="true" />
                   </motion.span>
-                )}
-              </div>
-              
-              <motion.span 
-                className={`text-xs font-medium transition-all duration-200 whitespace-nowrap ${
-                  isActive ? 'font-bold drop-shadow-sm shadow-accent/30' : ''
+                  <span className={`absolute bottom-1 text-[10px] font-bold leading-none ${isLanding ? 'text-foreground' : isActive ? 'text-accent' : 'text-foreground'}`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            }
+
+            return (
+              <Link
+                key={item.label}
+                to={item.path}
+                className={`group relative flex h-full min-w-0 flex-col items-center justify-center gap-1 pb-1 transition-colors ${
+                  isLanding
+                    ? isActive
+                      ? 'text-accent'
+                      : 'text-foreground/55 hover:text-foreground'
+                    : isActive
+                      ? 'text-accent'
+                      : 'text-muted-foreground hover:text-foreground'
                 }`}
-                animate={{ y: isActive ? -1 : 0 }}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={`${item.label}${hasBadge ? `, ${count} item${count === 1 ? '' : 's'}` : ''}`}
               >
-                {item.label}
-              </motion.span>
-            </Link>
-          );
-        })}
-      </div>
-      
-      {/* Safe area for devices with home indicators */}
-      <div className="h-[env(safe-area-inset-bottom)] bg-background/95" />
-    </motion.nav>
+                {isActive && (
+                  <motion.span
+                    layoutId="activeMobileNavIndicator"
+                    className={`absolute left-1/2 top-1 h-1 w-8 -translate-x-1/2 rounded-full ${
+                      isLanding ? 'bg-gradient-to-r from-transparent via-accent to-transparent' : 'bg-gradient-to-r from-accent via-accent/80 to-transparent'
+                    }`}
+                    aria-hidden="true"
+                  />
+                )}
+
+                <motion.span whileTap={{ scale: 0.92 }} className="relative rounded-full p-1.5 transition-colors group-hover:bg-foreground/5">
+                  <item.icon className={`h-[21px] w-[21px] transition-all ${isActive ? 'stroke-[2.5]' : ''}`} aria-hidden="true" />
+                  {hasBadge && (
+                    <motion.span
+                      initial={{ scale: 0, y: -4 }}
+                      animate={{ scale: 1, y: 0 }}
+                      className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-accent px-1 text-[10px] font-bold text-accent-foreground shadow-md"
+                      aria-hidden="true"
+                    >
+                      {count}
+                    </motion.span>
+                  )}
+                </motion.span>
+
+                <span className={`max-w-full truncate text-[10px] leading-none ${isActive ? 'font-bold' : 'font-medium'}`}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </motion.div>
   );
 };

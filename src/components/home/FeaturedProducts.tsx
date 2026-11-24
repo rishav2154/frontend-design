@@ -1,175 +1,94 @@
-import { ArrowRight, Loader2, Zap, TrendingUp, Star, Timer, ChevronRight } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, Loader2, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useFeaturedProducts, useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/products/ProductCard';
-import { useState, useEffect } from 'react';
+import type { Product } from '@/hooks/useProducts';
 
-// Countdown timer component
-const CountdownTimer = () => {
-  const [time, setTime] = useState({ hours: 11, minutes: 45, seconds: 32 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime((prev) => {
-        let { hours, minutes, seconds } = prev;
-        seconds--;
-        if (seconds < 0) { seconds = 59; minutes--; }
-        if (minutes < 0) { minutes = 59; hours--; }
-        if (hours < 0) { hours = 23; minutes = 59; seconds = 59; }
-        return { hours, minutes, seconds };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const pad = (n: number) => n.toString().padStart(2, '0');
-
-  return (
-    <div className="flex items-center gap-1">
-      {[pad(time.hours), pad(time.minutes), pad(time.seconds)].map((val, i) => (
-        <span key={i} className="flex items-center gap-1">
-          <span className="bg-background text-foreground text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded-md border border-border/50">
-            {val}
-          </span>
-          {i < 2 && <span className="text-muted-foreground text-xs font-bold">:</span>}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-interface ProductRowProps {
-  title: string;
-  icon: React.ReactNode;
-  badge?: string;
-  badgeColor?: string;
-  products: any[];
+interface FeaturedProductsProps {
+  products: Product[];
   isLoading: boolean;
-  bgClass?: string;
-  showTimer?: boolean;
+  isError: boolean;
+  onRetry: () => void;
 }
 
-const ProductRow = ({ title, icon, badge, badgeColor = "bg-accent", products, isLoading, bgClass = "bg-card", showTimer }: ProductRowProps) => (
-  <section className={`py-4 sm:py-7 ${bgClass}`}>
-    <div className="container mx-auto px-2 sm:px-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-            {icon}
-          </div>
+export const FeaturedProducts = ({ products, isLoading, isError, onRetry }: FeaturedProductsProps) => {
+  return (
+    <section className="home-section home-case-edit" aria-labelledby="case-edit-heading">
+      <div className="home-shell px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-end justify-between gap-5 sm:mb-12">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-xl font-bold text-foreground">{title}</h2>
-              {badge && (
-                <span className={`${badgeColor} text-accent-foreground text-[8px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse`}>
-                  {badge}
-                </span>
-              )}
+            <p className="home-eyebrow">Professional phone cases</p>
+            <h2 id="case-edit-heading" className="font-editorial home-section-heading mt-3 text-4xl leading-[0.94] tracking-[-0.04em] sm:text-6xl">
+              Every listed case.<br className="hidden sm:block" /> Ready to make personal.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-foreground/[0.64] sm:text-base">
+              Browse every phone-case product currently available, then choose your exact phone and finish in the studio.
+            </p>
+          </div>
+          <Link to="/shop?category=phone-cover" className="home-text-link group hidden sm:inline-flex">
+            Shop phone cases
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="home-state-panel liquid-glass grid min-h-72 place-items-center" role="status" aria-live="polite">
+            <div className="text-center">
+              <Loader2 className="mx-auto h-7 w-7 animate-spin text-accent" aria-hidden="true" />
+              <p className="mt-3 text-sm text-muted-foreground">Loading every phone case…</p>
             </div>
-            {showTimer && (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] sm:text-xs text-muted-foreground">Ends in</span>
-                <CountdownTimer />
+          </div>
+        ) : isError ? (
+          <div className="home-state-panel liquid-glass grid min-h-72 place-items-center px-6 text-center" role="alert">
+            <div>
+              <AlertCircle className="mx-auto h-7 w-7 text-accent" aria-hidden="true" />
+              <h3 className="font-editorial mt-4 text-3xl">The phone cases could not load.</h3>
+              <p className="mt-2 text-sm text-muted-foreground">The case studio is still ready whenever you are.</p>
+              <button type="button" onClick={onRetry} className="home-button home-button-primary mt-5">
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : products.length > 0 ? (
+          <div className={`grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 ${products.length === 1 ? 'lg:grid-cols-[minmax(250px,340px)_minmax(0,1fr)]' : ''}`}>
+            {products.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+            {products.length === 1 && (
+              <div className="home-editorial-panel liquid-glass-luminous hidden min-h-full flex-col justify-end lg:flex">
+                <span className="home-icon-orb">
+                  <Smartphone className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+                </span>
+                <p className="home-eyebrow mt-auto pt-14">One product, many possibilities</p>
+                <h3 className="font-editorial home-section-heading mt-3 max-w-xl text-4xl leading-[0.98] tracking-[-0.035em]">
+                  Your phone model and chosen finish shape the final case.
+                </h3>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-foreground/[0.62]">
+                  Open the studio to see the choices available for your phone before adding anything to the cart.
+                </p>
               </div>
             )}
           </div>
-        </div>
-        <Link
-          to="/shop"
-          className="flex items-center gap-1 text-accent text-xs sm:text-sm font-medium hover:gap-2 transition-all"
-        >
-          View All <ChevronRight className="w-3.5 h-3.5" />
+        ) : (
+          <div className="home-empty-edit home-state-panel liquid-glass-luminous grid min-h-[340px] place-items-center overflow-hidden px-6 text-center">
+            <div className="max-w-md">
+              <p className="home-eyebrow">Made from your photo</p>
+              <h3 className="font-editorial mt-3 text-4xl leading-none tracking-[-0.03em]">Your custom case starts in the studio.</h3>
+              <p className="mt-4 text-sm leading-6 text-foreground/[0.64]">
+                Choose the phone you own and build a one-off design rather than settling for something off the shelf.
+              </p>
+              <Link to="/customize-phone-cover" className="home-button home-button-primary mt-6">
+                Design my case
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <Link to="/shop?category=phone-cover" className="home-text-link group mt-7 justify-center sm:hidden">
+          Shop phone cases
+          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>
-
-      {/* Products */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-7 h-7 animate-spin text-accent" />
-        </div>
-      ) : products.length === 0 ? (
-        <p className="text-center text-muted-foreground py-10 text-sm">No products available.</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
-          {products.slice(0, 5).map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
-);
-
-// Enhanced offer banners
-const OfferBanner = () => (
-  <section className="py-3 sm:py-5 bg-background">
-    <div className="container mx-auto px-2 sm:px-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-        {[
-          { img: "https://images.unsplash.com/photo-1549465220-1a8b9238f37e?w=400&q=80", label: "COMBO DEALS", title: "Up to 40% Off", sub: "Gift Combos", link: "/shop?category=combos", gradient: "from-black/70 via-black/50 to-transparent" },
-          { img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80", label: "NEW ARRIVALS", title: "Photo Frames", sub: "Starting ₹449", link: "/shop?category=frames", gradient: "from-black/70 via-black/50 to-transparent" },
-          { img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80", label: "TRENDING", title: "Custom Tees", sub: "From ₹299", link: "/shop?category=tshirts", gradient: "from-black/70 via-black/50 to-transparent" },
-          { img: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80", label: "BEST SELLER", title: "Phone Covers", sub: "From ₹199", link: "/shop?category=phone-covers", gradient: "from-black/70 via-black/50 to-transparent" },
-        ].map((item, i) => (
-          <Link key={i} to={item.link} className="relative rounded-2xl overflow-hidden aspect-[3/2] group border border-border shadow-sm hover:shadow-lg transition-shadow">
-            <img
-              src={item.img}
-              alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-            <div className={`absolute inset-0 bg-gradient-to-r ${item.gradient}`} />
-            <div className="absolute inset-0 flex flex-col justify-center p-3 sm:p-5">
-              <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 tracking-widest uppercase mb-1">{item.label}</span>
-              <p className="text-base sm:text-xl font-bold text-white leading-tight">{item.title}</p>
-              <p className="text-[10px] sm:text-xs text-white/70 mt-0.5">{item.sub}</p>
-              <span className="mt-2 text-[10px] sm:text-xs font-semibold text-amber-400 flex items-center gap-1">
-                Shop Now <ChevronRight className="w-3 h-3" />
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-export const FeaturedProducts = () => {
-  const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
-  const { data: allProducts = [], isLoading: allLoading } = useProducts();
-
-  return (
-    <>
-      <ProductRow
-        title="Deals of the Day"
-        icon={<Zap className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />}
-        badge="LIVE"
-        badgeColor="bg-destructive"
-        products={featuredProducts}
-        isLoading={featuredLoading}
-        bgClass="bg-muted/30"
-        showTimer
-      />
-
-      <OfferBanner />
-
-      <ProductRow
-        title="Trending Now"
-        icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />}
-        badge="HOT"
-        badgeColor="bg-accent"
-        products={allProducts}
-        isLoading={allLoading}
-        bgClass="bg-background"
-      />
-
-      <ProductRow
-        title="Top Rated"
-        icon={<Star className="w-4 h-4 sm:w-5 sm:h-5 text-accent fill-accent" />}
-        products={allProducts.slice().reverse()}
-        isLoading={allLoading}
-        bgClass="bg-muted/30"
-      />
-    </>
+    </section>
   );
 };

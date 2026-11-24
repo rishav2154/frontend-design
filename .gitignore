@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Local test artifacts
+gui-test-screenshots/
+.zcode/
 
 # Editor directories and files
 .vscode/*

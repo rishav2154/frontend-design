@@ -1,159 +1,64 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, Gift, Crown, Sparkles, Diamond } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowUpRight, MessageCircle, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import productPhone from '@/assets/product-phone.jpg';
+
+const whatsappHref =
+  'https://wa.me/917827525257?text=Hi%20The%20Design%20Hive%2C%20I%20would%20like%20help%20choosing%20a%20personalised%20product.';
 
 export const CTASection = () => {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <section className="py-32 relative overflow-hidden">
-      <div className="container mx-auto px-4 lg:px-8">
+    <section className="home-section home-final-cta">
+      <div className="home-shell px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative rounded-[2.5rem] overflow-hidden"
+          viewport={{ once: true, amount: 0.2 }}
+          className="home-cta-panel liquid-glass-luminous relative overflow-hidden px-6 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-20"
         >
-          {/* Premium Multi-layer Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-luxury-deep-1 via-luxury-deep-2 to-luxury-deep-3" />
-          <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-          
-          {/* Animated Gold Orbs */}
-          <motion.div
-            animate={{ 
-              scale: [1, 1.3, 1], 
-              opacity: [0.2, 0.4, 0.2],
-              x: [0, 30, 0],
-              y: [0, -20, 0]
-            }}
-            transition={{ duration: 8, repeat: Infinity }}
-            className="absolute top-1/4 right-1/4 w-64 h-64 bg-gold rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ 
-              scale: [1, 1.2, 1], 
-              opacity: [0.15, 0.3, 0.15],
-              x: [0, -20, 0],
-              y: [0, 30, 0]
-            }}
-            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-accent rounded-full blur-3xl"
-          />
+          <div className="absolute -right-12 -top-20 h-64 w-64 rounded-full border border-current/10 sm:h-96 sm:w-96" aria-hidden="true" />
+          <div className="absolute -bottom-28 right-24 h-56 w-56 rounded-full border border-accent/20" aria-hidden="true" />
 
-          {/* Premium Border */}
-          <div className="absolute inset-0 rounded-[2.5rem] border-2 border-gold/20" />
-
-          {/* Content */}
-          <div className="relative p-12 md:p-24 text-center">
-            {/* Premium Icon */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              className="relative w-28 h-28 mx-auto mb-10"
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="absolute inset-0 rounded-full border-2 border-dashed border-gold/30"
-              />
-              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-gold/20 to-accent/20 backdrop-blur-sm flex items-center justify-center">
-                <Gift className="w-12 h-12 text-gold" />
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_0.52fr]">
+            <div>
+              <p className="home-chip home-eyebrow w-fit">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                Personal pieces, made from your ideas
+              </p>
+              <h2 className="font-editorial home-section-heading mt-5 max-w-3xl text-5xl leading-[0.9] tracking-[-0.045em] sm:text-7xl lg:text-8xl">
+                Make something nobody else has.
+              </h2>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-foreground/[0.66] sm:text-base">
+                Start with a custom phone case, or explore mugs, frames, keychains, lamps, and every personalised product currently in the shop.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link to="/shop" className="home-button home-cta-primary">
+                  Explore all products
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link to="/customize-phone-cover" className="home-button home-cta-secondary">
+                  Create a phone case
+                </Link>
+                <a href={whatsappHref} target="_blank" rel="noreferrer" className="home-button home-cta-secondary">
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                  Ask for help
+                </a>
               </div>
-              {/* Floating Diamonds */}
-              <motion.div
-                animate={{ y: [0, -8, 0], rotate: [0, 10, 0] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="absolute -top-2 -right-2"
-              >
-                <Diamond className="w-6 h-6 text-gold" />
-              </motion.div>
-              <motion.div
-                animate={{ y: [0, -6, 0], rotate: [0, -10, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
-                className="absolute -bottom-1 -left-1"
-              >
-                <Sparkles className="w-5 h-5 text-accent" />
-              </motion.div>
+            </div>
+
+            <motion.div
+              animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [3, 4.5, 3] }}
+              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative mx-auto w-full max-w-[290px] lg:mr-0"
+            >
+              <div className="absolute -inset-9 rounded-full bg-accent/[0.12] blur-3xl" aria-hidden="true" />
+              <div className="home-image-frame relative rounded-[1.8rem] border-[8px] p-1.5 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+                <img src={productPhone} alt="A custom printed phone case" loading="lazy" decoding="async" className="aspect-[4/5] w-full rounded-[1.15rem] object-cover" />
+                <p className="pb-1 pt-2 text-center text-[9px] font-bold uppercase tracking-[0.18em]">Made from your moment</p>
+              </div>
             </motion.div>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-6xl font-bold mb-8"
-            >
-              <span className="text-foreground">Ready to Create </span>
-              <br className="hidden md:block" />
-              <span className="bg-gradient-to-r from-gold via-accent to-accent-warm bg-clip-text text-transparent">
-                Something Extraordinary
-              </span>
-              <span className="text-foreground">?</span>
-            </motion.h2>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-foreground/70 max-w-3xl mx-auto mb-12 leading-relaxed"
-            >
-              Begin crafting your personalized masterpiece today. Upload your cherished photos, 
-              add your unique touch, and create a gift that will be treasured for generations.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-              <Link to="/customize">
-                <motion.span
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group relative inline-flex items-center gap-3 px-12 py-5 rounded-2xl font-semibold text-lg overflow-hidden"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(43 74% 49%) 0%, hsl(339 78% 53%) 50%, hsl(14 100% 59%) 100%)',
-                    boxShadow: '0 20px 60px hsl(43 74% 49% / 0.4), 0 0 80px hsl(339 78% 53% / 0.2)',
-                  }}
-                >
-                  <Crown className="w-5 h-5 text-white" />
-                  <span className="text-white">Begin Your Masterpiece</span>
-                  <motion.span
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <ArrowRight className="w-5 h-5 text-white" />
-                  </motion.span>
-                </motion.span>
-              </Link>
-              <Link to="/shop">
-                <motion.span
-                  whileHover={{ scale: 1.05, borderColor: 'hsl(43 74% 49%)' }}
-                  whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-3 px-12 py-5 rounded-2xl font-semibold text-lg border-2 border-gold/30 text-foreground hover:text-gold hover:border-gold transition-all duration-300"
-                >
-                  Explore Collection
-                </motion.span>
-              </Link>
-            </motion.div>
-
-            {/* Decorative Rotating Elements */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-              className="absolute top-12 right-12 w-24 h-24 border border-gold/20 rounded-full hidden md:block"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-              className="absolute bottom-12 left-12 w-40 h-40 border border-gold/15 rounded-full hidden md:block"
-            />
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="absolute top-1/2 left-8 w-16 h-16 border border-accent/20 rounded-full hidden lg:block"
-            />
           </div>
         </motion.div>
       </div>

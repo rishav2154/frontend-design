@@ -44,7 +44,7 @@ export const useWishlistStore = create<WishlistStore>()(
       },
     }),
     {
-      name: 'giftoria-wishlist',
+      name: 'design-hive-wishlist',
     }
   )
 );

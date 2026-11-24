@@ -15,14 +15,16 @@ export interface CartItem {
     variant?: string;
     designUrl?: string;
     brand?: string;
+    brandId?: string;
     model?: string;
+    modelId?: string;
     coverType?: string;
+    coverTypeId?: string;
     specialInstructions?: string;
   };
 }
 
 export interface AppliedCoupon {
-  discount: any;
   code: string;
   discountType: "percentage" | "fixed" | "free_shipping";
   discountValue: number;
@@ -34,6 +36,7 @@ interface CartStore {
   items: CartItem[];
   isOpen: boolean;
   appliedCoupon: AppliedCoupon | null;
+  appliedCoupons: AppliedCoupon[];
 
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (id: string) => void;
@@ -50,7 +53,7 @@ interface CartStore {
   getFinalPrice: () => number;
 
   applyCoupon: (coupon: AppliedCoupon) => void;
-  removeCoupon: () => void;
+  removeCoupon: (code?: string) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -59,6 +62,7 @@ export const useCartStore = create<CartStore>()(
       items: [],
       isOpen: false,
       appliedCoupon: null,
+      appliedCoupons: [],
 
       addItem: (item) => {
         if (!item.productId || !item.name || !item.price) return;
@@ -89,7 +93,7 @@ export const useCartStore = create<CartStore>()(
         }));
       },
 
-      clearCart: () => set({ items: [], appliedCoupon: null }),
+      clearCart: () => set({ items: [], appliedCoupon: null, appliedCoupons: [] }),
 
       toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),
       openCart: () => set({ isOpen: true }),
@@ -101,27 +105,50 @@ export const useCartStore = create<CartStore>()(
       getTotalPrice: () =>
         get().items.reduce((t, i) => t + i.price * i.quantity, 0),
 
-      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
-      removeCoupon: () => set({ appliedCoupon: null }),
+      applyCoupon: (coupon) => set((state) => {
+        const current = state.appliedCoupons.length
+          ? state.appliedCoupons
+          : state.appliedCoupon
+            ? [state.appliedCoupon]
+            : [];
+        const withoutDuplicate = current.filter(
+          (entry) => entry.code.toLocaleUpperCase() !== coupon.code.toLocaleUpperCase(),
+        );
+        const appliedCoupons = [...withoutDuplicate, coupon].slice(0, 5);
+        return { appliedCoupons, appliedCoupon: appliedCoupons[0] || null };
+      }),
+      removeCoupon: (code) => set((state) => {
+        if (!code) return { appliedCoupon: null, appliedCoupons: [] };
+        const current = state.appliedCoupons.length
+          ? state.appliedCoupons
+          : state.appliedCoupon
+            ? [state.appliedCoupon]
+            : [];
+        const appliedCoupons = current.filter(
+          (entry) => entry.code.toLocaleUpperCase() !== code.toLocaleUpperCase(),
+        );
+        return { appliedCoupons, appliedCoupon: appliedCoupons[0] || null };
+      }),
 
       getDiscount: () => {
-        const { appliedCoupon, getTotalPrice } = get();
-        if (!appliedCoupon) return 0;
-
+        const { appliedCoupon, appliedCoupons, getTotalPrice } = get();
+        const coupons = appliedCoupons.length
+          ? appliedCoupons
+          : appliedCoupon
+            ? [appliedCoupon]
+            : [];
         const subtotal = getTotalPrice();
-
-        if (appliedCoupon.discountType === "percentage") {
-          const d = (subtotal * appliedCoupon.discountValue) / 100;
-          return appliedCoupon.maxDiscount
-            ? Math.min(d, appliedCoupon.maxDiscount)
-            : d;
-        }
-
-        if (appliedCoupon.discountType === "fixed") {
-          return Math.min(appliedCoupon.discountValue, subtotal);
-        }
-
-        return 0;
+        const discount = coupons.reduce((total, coupon) => {
+          if (coupon.discountType === "percentage") {
+            const amount = (subtotal * coupon.discountValue) / 100;
+            return total + (coupon.maxDiscount ? Math.min(amount, coupon.maxDiscount) : amount);
+          }
+          if (coupon.discountType === "fixed") {
+            return total + coupon.discountValue;
+          }
+          return total;
+        }, 0);
+        return Math.min(discount, subtotal);
       },
 
       getFinalPrice: () => {
@@ -129,6 +156,17 @@ export const useCartStore = create<CartStore>()(
         return getTotalPrice() - getDiscount();
       },
     }),
-    { name: "giftoria-cart" }
+    {
+      name: "design-hive-cart",
+      version: 2,
+      migrate: (persistedState: any) => ({
+        ...persistedState,
+        appliedCoupons: Array.isArray(persistedState?.appliedCoupons)
+          ? persistedState.appliedCoupons
+          : persistedState?.appliedCoupon
+            ? [persistedState.appliedCoupon]
+            : [],
+      }),
+    }
   )
 );

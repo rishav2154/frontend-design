@@ -6,11 +6,11 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Badge, badgeVariants } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Loader2, Users, Shield, ShieldOff, MoreHorizontal, 
-  UserCog, Mail, Phone, Calendar, Zap 
+import {
+  Users, Shield, ShieldOff, MoreHorizontal,
+  Mail, Calendar, Zap
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { apiFetch, endpoints } from '@/lib/api';
@@ -31,7 +31,6 @@ interface User {
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
   const { toast } = useToast();
 
   const [stats, setStats] = useState({
@@ -65,7 +64,6 @@ export default function AdminUsers() {
       });
     } finally {
       setLoading(false);
-      setStatsLoading(false);
     }
   };
 
@@ -126,13 +124,13 @@ export default function AdminUsers() {
     <AdminLayout>
       <div className="space-y-6">
         {/* 🎨 ENHANCED HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl">
               <Users className="w-6 h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground via-primary to-primary/80 bg-clip-text text-transparent tracking-tight">
+            <div className="min-w-0">
+              <h1 className="break-words bg-gradient-to-r from-foreground via-primary to-primary/80 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
                 User Management
               </h1>
               <p className="text-muted-foreground">Advanced user analytics and role management</p>
@@ -140,10 +138,10 @@ export default function AdminUsers() {
           </div>
           
           {/* 🔢 STATS GRID */}
-          <div className="flex gap-3 flex-wrap">
+          <div className="grid w-full grid-cols-1 gap-3 min-[420px]:grid-cols-3 md:w-auto">
             <HoverCard>
               <HoverCardTrigger>
-                <div className="px-6 py-3 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 backdrop-blur-sm border border-blue-500/20 rounded-2xl hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer">
+                <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 sm:px-6">
                   <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
                   <div className="text-xs font-medium text-blue-500 uppercase tracking-wider">Total Users</div>
                 </div>
@@ -159,12 +157,12 @@ export default function AdminUsers() {
               </HoverCardContent>
             </HoverCard>
 
-            <div className="px-6 py-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 backdrop-blur-sm border border-emerald-500/20 rounded-2xl hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300">
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 sm:px-6">
               <div className="text-2xl font-bold text-emerald-600">{stats.users}</div>
               <div className="text-xs font-medium text-emerald-500 uppercase tracking-wider">Regular Users</div>
             </div>
 
-            <div className="px-6 py-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/20 rounded-2xl hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
+            <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 sm:px-6">
               <div className="text-2xl font-bold text-purple-600">{stats.recent}</div>
               <div className="text-xs font-medium text-purple-500 uppercase tracking-wider">New This Month</div>
             </div>
@@ -175,13 +173,13 @@ export default function AdminUsers() {
 
         {/* 🎨 PREMIUM TABLE CARD */}
         <Card className="border-0 shadow-2xl bg-gradient-to-br from-background via-card to-muted/20 backdrop-blur-xl overflow-hidden">
-          <CardHeader className="pb-8 bg-gradient-to-r from-primary/5 via-blue-50/50 to-indigo-50/50">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          <CardHeader className="bg-gradient-to-r from-primary/5 via-blue-50/50 to-indigo-50/50 pb-6 sm:pb-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="break-words bg-gradient-to-r from-foreground to-primary bg-clip-text text-xl font-bold text-transparent sm:text-2xl">
                 All Users ({users.length})
               </CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="border-dashed hover:bg-primary/5">
+                <Button variant="outline" size="sm" className="min-h-11 w-full border-dashed hover:bg-primary/5 sm:w-auto">
                   <Zap className="w-4 h-4 mr-2" />
                   Bulk Actions
                 </Button>
@@ -200,8 +198,9 @@ export default function AdminUsers() {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <>
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
                   <TableHeader className="border-b border-border/50">
                     <TableRow className="hover:bg-transparent border-b-2 border-primary/20">
                       <TableHead className="font-bold text-primary tracking-tight pl-8">User Details</TableHead>
@@ -328,7 +327,56 @@ export default function AdminUsers() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+                </div>
+
+                <div className="space-y-3 p-4 md:hidden">
+                  {users.map((user) => (
+                    <article key={user.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <Avatar className="h-12 w-12 shrink-0 ring-2 ring-background shadow-lg">
+                          <AvatarImage src={user.avatar_url} />
+                          <AvatarFallback className="bg-gradient-to-br from-primary/90 via-purple-500/90 to-pink-500/90 font-bold text-primary-foreground">
+                            {getInitials(user.name, user.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="break-words font-bold">{user.name}</h3>
+                          <p className="mt-1 break-all text-sm text-muted-foreground">{user.email}</p>
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3 shrink-0" />
+                            Joined {new Date(user.created_at).toLocaleDateString('en-IN')}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <Badge className={`${getRoleColor(user.role)} px-3 py-1.5 text-xs font-semibold`}>
+                          {user.role === 'admin' ? 'ADMIN' : 'USER'}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 border-t pt-4">
+                        <Button
+                          variant="outline"
+                          className={`min-h-11 w-full font-semibold ${
+                            user.role === 'admin'
+                              ? 'border-destructive/50 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                              : 'border-emerald-500/50 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700'
+                          }`}
+                          onClick={() => toggleAdmin(user.id)}
+                        >
+                          {user.role === 'admin' ? (
+                            <ShieldOff className="mr-2 h-5 w-5" />
+                          ) : (
+                            <Shield className="mr-2 h-5 w-5" />
+                          )}
+                          {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                        </Button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

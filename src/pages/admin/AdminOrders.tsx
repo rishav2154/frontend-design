@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useInvoiceDownload } from '@/hooks/useInvoiceDownload';
-import { Loader2, Eye, Package, Download, FileText, User } from 'lucide-react';
+import { Loader2, Eye, Package, FileText, User } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -58,6 +58,10 @@ interface OrderItem {
   customization?: {
     imageUrl?: string;
     text?: string;
+    brand?: string;
+    model?: string;
+    coverType?: string;
+    specialInstructions?: string;
   } | null;
 }
 
@@ -170,12 +174,12 @@ const AdminOrders = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Orders Management</h1>
-            <p className="text-muted-foreground mt-2">Manage customer orders and update delivery status</p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Orders Management</h1>
+            <p className="mt-2 text-muted-foreground">Manage customer orders and update delivery status</p>
           </div>
-          <div className="text-sm text-muted-foreground font-medium">
+          <div className="text-sm font-medium text-muted-foreground sm:text-right">
             {orders.length} Total Orders
           </div>
         </div>
@@ -201,8 +205,9 @@ const AdminOrders = () => {
                 <p className="text-sm text-muted-foreground">Orders will appear here when customers place them.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <>
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
                   <TableHeader>
                     <TableRow className="border-b">
                       <TableHead className="w-24 font-semibold">Order #</TableHead>
@@ -307,21 +312,114 @@ const AdminOrders = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+                </div>
+
+                <div className="space-y-3 md:hidden">
+                  {orders.map((order) => (
+                    <article key={order.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-all font-mono text-sm font-semibold text-primary/90">
+                            {getOrderNumber(order)}
+                          </p>
+                          <div className="mt-2 flex min-w-0 items-center gap-2">
+                            <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="break-words font-medium">{getCustomerName(order)}</span>
+                          </div>
+                          {order.customer_phone !== 'N/A' && (
+                            <p className="mt-1 break-all text-xs text-muted-foreground">{order.customer_phone}</p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-mono text-lg font-semibold">{formatCurrency(order.final_amount)}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={order.payment_method === 'cod' ? 'secondary' : 'default'}
+                          className={order.payment_method === 'cod'
+                            ? 'border-amber-200 bg-amber-100 text-amber-800'
+                            : 'border-green-200 bg-green-100 text-green-800'}
+                        >
+                          {order.payment_method.toUpperCase()}
+                        </Badge>
+                        <Badge className={statusColors[order.status] || ''}>
+                          {order.status.toUpperCase()}
+                        </Badge>
+                        {order.pay_on_delivery > 0 && (
+                          <span className="text-xs text-amber-600">
+                            {formatCurrency(order.pay_on_delivery)} on delivery
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-4 border-t pt-4">
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) => handleStatusChange(order.id, value)}
+                        >
+                          <SelectTrigger className="min-h-11 w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(statusColors).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => viewOrderDetails(order)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => downloadInvoice(order.id)}
+                            disabled={downloading === order.id}
+                          >
+                            {downloading === order.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <FileText className="mr-2 h-4 w-4" />
+                            )}
+                            Invoice
+                          </Button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
 
         {/* ✅ Order Details Modal - Backend Compatible */}
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] p-1">
-            <DialogHeader className="p-6 border-b bg-muted/30">
-              <div className="flex items-start justify-between">
-                <div>
-                  <DialogTitle className="text-2xl font-bold">
+          <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-hidden p-0 sm:p-1">
+            <DialogHeader className="border-b bg-muted/30 p-4 pr-12 sm:p-6 sm:pr-12">
+              <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <DialogTitle className="break-all text-xl font-bold sm:text-2xl">
                     Order #{getOrderNumber(selectedOrder)}
                   </DialogTitle>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground sm:gap-4">
                     <span>Customer: {getCustomerName(selectedOrder)}</span>
                     <span>Items: {selectedOrder?.items_count || 0}</span>
                     <Badge className={statusColors[selectedOrder?.status || 'pending']}>
@@ -336,6 +434,7 @@ const AdminOrders = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="min-h-11 w-full sm:w-auto"
                     onClick={() => downloadInvoice(selectedOrder.id)}
                     disabled={downloading === selectedOrder.id}
                   >
@@ -346,13 +445,13 @@ const AdminOrders = () => {
               </div>
             </DialogHeader>
 
-            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+            <div className="max-h-[70dvh] space-y-6 overflow-y-auto p-4 sm:p-6">
               {/* ✅ Backend-matched breakdown */}
-              <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border rounded-2xl p-6">
+              <div className="rounded-2xl border bg-gradient-to-r from-primary/5 to-secondary/5 p-4 sm:p-6">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                   💰 Order Breakdown
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-1 gap-4 text-sm min-[400px]:grid-cols-2 md:grid-cols-4">
                   <div>
                     <div className="text-muted-foreground mb-1">Subtotal</div>
                     <div className="font-bold text-lg">{formatCurrency(selectedOrder?.subtotal)}</div>
@@ -375,7 +474,7 @@ const AdminOrders = () => {
                   </div>
                 </div>
                 <div className="border-t pt-3 mt-4">
-                  <div className="flex justify-between text-2xl font-bold text-primary">
+                  <div className="flex flex-wrap justify-between gap-2 text-xl font-bold text-primary sm:text-2xl">
                     <span>Total</span>
                     <span>{formatCurrency(selectedOrder?.final_amount)}</span>
                   </div>
@@ -438,34 +537,47 @@ const AdminOrders = () => {
                     📦 Order Items ({orderItems.length})
                   </h3>
                   {orderItems.map((item) => (
-                    <div key={item.id} className="border rounded-xl p-6 hover:shadow-md transition-all">
-                      <div className="flex items-start gap-6">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-xl mb-2">{item.product_name}</h4>
-                          <div className="flex items-center gap-4 text-sm mb-4">
+                    <div key={item.id} className="rounded-xl border p-4 transition-all hover:shadow-md sm:p-6">
+                      <div className="flex flex-col items-start gap-4 sm:flex-row sm:gap-6">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="mb-2 break-words text-lg font-bold sm:text-xl">{item.product_name}</h4>
+                          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm sm:gap-4">
                             <span className="text-muted-foreground">Qty: {item.quantity}</span>
                             <span className="font-semibold">
                               ₹{Number(item.price || 0).toLocaleString('en-IN')}
                             </span>
-                            <span className="font-bold text-lg text-primary">
+                            <span className="text-lg font-bold text-primary">
                               Item Total: ₹{(item.quantity * Number(item.price || 0)).toLocaleString('en-IN')}
                             </span>
                           </div>
                           {item.customization?.text && (
-                            <div className="bg-green-50 border border-green-100 p-3 rounded-lg mb-3">
+                            <div className="mb-3 break-words rounded-lg border border-green-100 bg-green-50 p-3">
                               <span className="font-medium text-black">✏️ Custom Text: </span>
-                              <span className="font-mono bg-white px-3 py-1 rounded border text-black text-sm">
+                              <span className="mt-1 inline-block max-w-full break-words rounded border bg-white px-3 py-1 font-mono text-sm text-black">
                                 "{item.customization.text}"
                               </span>
                             </div>
                           )}
+                          {(item.customization?.brand || item.customization?.model || item.customization?.coverType) && (
+                            <div className="mb-3 grid gap-2 rounded-lg border bg-muted/30 p-3 text-sm sm:grid-cols-3">
+                              {item.customization.brand && <p><span className="font-medium">Brand:</span> {item.customization.brand}</p>}
+                              {item.customization.model && <p><span className="font-medium">Model:</span> {item.customization.model}</p>}
+                              {item.customization.coverType && <p><span className="font-medium">Cover:</span> {item.customization.coverType}</p>}
+                            </div>
+                          )}
+                          {item.customization?.specialInstructions && (
+                            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                              <span className="font-medium">Production instructions:</span>{' '}
+                              {item.customization.specialInstructions}
+                            </div>
+                          )}
                         </div>
                         {item.customization?.imageUrl && (
-                          <div className="flex flex-col items-end gap-3 ml-auto">
+                          <div className="flex w-full flex-col gap-3 sm:ml-auto sm:w-auto sm:items-end">
                             <img
                               src={item.customization.imageUrl}
                               alt="Custom design"
-                              className="w-32 h-32 rounded-2xl object-cover border-2 border-border shadow-lg"
+                              className="h-auto max-h-48 w-full rounded-2xl border-2 border-border object-cover shadow-lg sm:h-32 sm:w-32"
                             />
                           </div>
                         )}

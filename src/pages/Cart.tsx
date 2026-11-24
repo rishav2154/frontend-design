@@ -24,7 +24,7 @@ const categoryImages: Record<string, string> = {
 };
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, getTotalPrice, clearCart, appliedCoupon, getDiscount, getFinalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotalPrice, clearCart, appliedCoupon, appliedCoupons, getDiscount } = useCartStore();
 
   const getItemImage = (item: typeof items[0]) => {
     if (item.image && item.image !== '/placeholder.svg') {
@@ -40,24 +40,30 @@ const Cart = () => {
 
   const subtotal = getTotalPrice();
   const discount = getDiscount();
-  const shipping = appliedCoupon?.discountType === 'free_shipping' ? 0 : (subtotal > 500 ? 0 : 50);
-  const tax = getFinalPrice() * 0.08;
-  const total = getFinalPrice() + shipping + tax;
+  const discountedSubtotal = subtotal - discount;
+  const activeCoupons = appliedCoupons.length
+    ? appliedCoupons
+    : appliedCoupon
+      ? [appliedCoupon]
+      : [];
+  const shipping = activeCoupons.some((coupon) => coupon.discountType === 'free_shipping') || subtotal > 500 ? 0 : 50;
+  const gst = discountedSubtotal * 0.08;
+  const total = discountedSubtotal + shipping + gst;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 lg:px-8">
+      <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
+        <div className="container mx-auto px-3 min-[360px]:px-4 lg:px-8">
           {/* Page Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="mb-8 text-center sm:mb-12"
           >
-            <h1 className="text-4xl md:text-5xl font-bold">
+            <h1 className="text-3xl font-bold min-[360px]:text-4xl md:text-5xl">
               Your <span className="text-gradient-accent">Cart</span>
             </h1>
             <p className="text-muted-foreground mt-4">
@@ -71,27 +77,27 @@ const Cart = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-16"
+              className="py-12 text-center sm:py-16"
             >
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-                <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted sm:h-24 sm:w-24">
+                <ShoppingBag className="h-10 w-10 text-muted-foreground sm:h-12 sm:w-12" />
               </div>
               <h3 className="text-xl font-semibold mb-4">Your cart is empty</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 Looks like you haven't added any personalized gifts yet. Start exploring our collection!
               </p>
-              <Link to="/shop" className="btn-luxury inline-flex items-center gap-2">
+              <Link to="/shop" className="btn-luxury inline-flex min-h-11 items-center justify-center gap-2 px-5 py-3 sm:px-8 sm:py-4">
                 Start Shopping
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </motion.div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid min-w-0 gap-6 lg:grid-cols-3 lg:gap-8">
               {/* Cart Items */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="lg:col-span-2 space-y-4"
+                className="min-w-0 space-y-4 lg:col-span-2"
               >
                 {items.map((item, index) => (
                   <motion.div
@@ -99,49 +105,61 @@ const Cart = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="glass-card p-6 flex gap-6"
+                    className="glass-card flex min-w-0 flex-col gap-4 p-4 min-[380px]:flex-row min-[380px]:gap-5 sm:gap-6 sm:p-6"
                   >
-                    <div className="w-28 h-28 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted min-[380px]:h-28 min-[380px]:w-28">
                       <img
                         src={getItemImage(item)}
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <div>
-                          <h3 className="font-semibold">{item.name}</h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="break-words font-semibold">{item.name}</h3>
                           {item.customization && (
-                            <p className="text-sm text-accent mt-1">✨ Customized</p>
+                            <div className="mt-1 space-y-1 text-sm">
+                              <p className="text-accent">✨ Customized</p>
+                              {(item.customization.brand || item.customization.model || item.customization.coverType) && (
+                                <p className="text-xs text-muted-foreground">
+                                  {[item.customization.brand, item.customization.model, item.customization.coverType]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => removeItem(item.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Remove ${item.name} from cart`}
                         >
                           <Trash2 className="w-5 h-5" />
                         </motion.button>
                       </div>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-3">
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 sm:mt-4">
+                        <div className="flex items-center gap-1 min-[360px]:gap-2 sm:gap-3">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                            className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-muted/80"
+                            aria-label={`Decrease quantity of ${item.name}`}
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="font-medium w-8 text-center">{item.quantity}</span>
+                          <span className="w-7 text-center font-medium min-[360px]:w-8" aria-label={`Quantity ${item.quantity}`}>{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                            className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-muted/80"
+                            aria-label={`Increase quantity of ${item.name}`}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <p className="text-xl font-bold">
+                        <p className="break-words text-lg font-bold min-[360px]:text-xl">
                           ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
@@ -151,7 +169,7 @@ const Cart = () => {
 
                 <button
                   onClick={clearCart}
-                  className="text-sm text-muted-foreground hover:text-destructive transition-colors"
+                  className="min-h-11 px-1 text-sm text-muted-foreground transition-colors hover:text-destructive"
                 >
                   Clear all items
                 </button>
@@ -161,8 +179,9 @@ const Cart = () => {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
+                className="min-w-0"
               >
-                <div className="glass-card p-6 sticky top-28">
+                <div className="glass-card p-4 min-[360px]:p-5 sm:p-6 lg:sticky lg:top-28">
                   <h3 className="text-lg font-semibold mb-6">Order Summary</h3>
 
                   <div className="space-y-4 mb-6">
@@ -171,9 +190,9 @@ const Cart = () => {
                       <span>₹{subtotal.toFixed(2)}</span>
                     </div>
                     {discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-500">Discount ({appliedCoupon?.code})</span>
-                        <span className="text-green-500">-₹{discount.toFixed(2)}</span>
+                      <div className="flex min-w-0 justify-between gap-3 text-sm">
+                        <span className="min-w-0 break-words text-green-500">Discount ({activeCoupons.map((coupon) => coupon.code).join(', ')})</span>
+                        <span className="shrink-0 text-green-500">-₹{discount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
@@ -183,8 +202,8 @@ const Cart = () => {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tax (8%)</span>
-                      <span>₹{tax.toFixed(2)}</span>
+                      <span className="text-muted-foreground">GST (8%)</span>
+                      <span>₹{gst.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -194,9 +213,9 @@ const Cart = () => {
                   </div>
 
                   <div className="border-t border-border pt-4 mb-6">
-                    <div className="flex justify-between">
+                    <div className="flex items-baseline justify-between gap-3">
                       <span className="font-semibold">Total</span>
-                      <span className="text-2xl font-bold">
+                      <span className="min-w-0 break-words text-right text-xl font-bold min-[360px]:text-2xl">
                         ₹{total.toFixed(2)}
                       </span>
                     </div>
@@ -206,7 +225,7 @@ const Cart = () => {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full btn-luxury flex items-center justify-center gap-2"
+                      className="btn-luxury flex min-h-11 w-full items-center justify-center gap-2 px-4 py-3 sm:px-8 sm:py-4"
                     >
                       Proceed to Checkout
                       <ArrowRight className="w-5 h-5" />
@@ -215,7 +234,7 @@ const Cart = () => {
 
                   <Link
                     to="/shop"
-                    className="block mt-4 text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="mt-3 flex min-h-11 items-center justify-center text-center text-sm text-muted-foreground transition-colors hover:text-foreground sm:mt-4"
                   >
                     Continue Shopping
                   </Link>

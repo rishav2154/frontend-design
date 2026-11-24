@@ -21,10 +21,12 @@ interface MugPreview3DProps {
   mugColor?: string;
 }
 
+type OrbitControlsRef = React.ElementRef<typeof OrbitControls>;
+
 // Camera controller
 const CameraController = forwardRef<
   { reset: () => void; zoomIn: () => void; zoomOut: () => void },
-  { controlsRef: React.RefObject<any> }
+  { controlsRef: React.RefObject<OrbitControlsRef> }
 >(({ controlsRef }, ref) => {
   const { camera } = useThree();
   useImperativeHandle(ref, () => ({
@@ -409,13 +411,13 @@ const GroundDisc = () => (
 // ─── Scene ───
 interface SceneProps extends MugPreview3DProps {
   cameraRef: React.RefObject<{ reset: () => void; zoomIn: () => void; zoomOut: () => void }>;
-  controlsRef: React.RefObject<any>;
+  controlsRef: React.RefObject<OrbitControlsRef>;
 }
 
 const Scene = ({ canvasTexture, variant, mugColor, cameraRef, controlsRef }: SceneProps) => (
   <>
     {/* Key light - warm, strong */}
-    <spotLight position={[5, 10, 6]} angle={0.15} penumbra={1} intensity={3.0} castShadow shadow-mapSize={[4096, 4096]} shadow-bias={-0.00002} color="#fff8f0" />
+    <spotLight position={[5, 10, 6]} angle={0.15} penumbra={1} intensity={3.0} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.00002} color="#fff8f0" />
     {/* Fill light - cooler, softer */}
     <spotLight position={[-6, 5, -3]} angle={0.4} penumbra={1} intensity={0.8} color="#dde8ff" />
     {/* Rim/back light */}
@@ -464,26 +466,53 @@ const Scene = ({ canvasTexture, variant, mugColor, cameraRef, controlsRef }: Sce
 
 export function MugPreview3D({ canvasTexture, variant, mugColor = '#ffffff' }: MugPreview3DProps) {
   const cameraRef = useRef<{ reset: () => void; zoomIn: () => void; zoomOut: () => void }>(null);
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControlsRef>(null);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] lg:min-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/20">
+    <div className="relative h-[340px] w-full min-w-0 overflow-hidden rounded-2xl bg-gradient-to-br from-muted/30 via-background to-muted/20 sm:h-auto sm:min-h-[500px] lg:min-h-[600px]">
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
-      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/90 backdrop-blur shadow-sm" onClick={() => cameraRef.current?.zoomIn()}><ZoomIn className="h-4 w-4" /></Button>
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/90 backdrop-blur shadow-sm" onClick={() => cameraRef.current?.zoomOut()}><ZoomOut className="h-4 w-4" /></Button>
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/90 backdrop-blur shadow-sm" onClick={() => cameraRef.current?.reset()}><RotateCcw className="h-4 w-4" /></Button>
+      <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-11 w-11 bg-background/90 shadow-sm backdrop-blur sm:h-10 sm:w-10"
+          onClick={() => cameraRef.current?.zoomIn()}
+          aria-label="Zoom in on mug preview"
+          title="Zoom in"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-11 w-11 bg-background/90 shadow-sm backdrop-blur sm:h-10 sm:w-10"
+          onClick={() => cameraRef.current?.zoomOut()}
+          aria-label="Zoom out of mug preview"
+          title="Zoom out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-11 w-11 bg-background/90 shadow-sm backdrop-blur sm:h-10 sm:w-10"
+          onClick={() => cameraRef.current?.reset()}
+          aria-label="Reset mug preview view"
+          title="Reset view"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
       <Canvas
         camera={{ position: [0, 0.5, 6], fov: 36 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.25 }}
         shadows="soft"
       >
         <Scene canvasTexture={canvasTexture} variant={variant} mugColor={mugColor} cameraRef={cameraRef} controlsRef={controlsRef} />
       </Canvas>
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-background/80 backdrop-blur px-3 py-1.5 rounded-full">
-        Drag to rotate • Scroll to zoom
+      <div className="absolute bottom-3 left-1/2 max-w-[calc(100%-1rem)] -translate-x-1/2 whitespace-nowrap rounded-full bg-background/80 px-3 py-1.5 text-center text-[11px] text-muted-foreground backdrop-blur sm:text-xs">
+        Drag to rotate • Pinch or scroll to zoom
       </div>
     </div>
   );

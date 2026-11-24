@@ -42,15 +42,15 @@ const team = [
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-h-dvh overflow-x-clip bg-background">
       <Navbar />
       <CartDrawer />
 
-      <main className="pt-24 pb-16">
+      <main className="pb-12 pt-20 sm:pb-16 sm:pt-24">
         {/* Hero Section */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-primary/5" />
-          <div className="container mx-auto px-4 lg:px-8 py-20">
+          <div className="container mx-auto px-3 py-12 min-[360px]:px-4 sm:py-16 lg:px-8 lg:py-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -59,13 +59,13 @@ const About = () => {
               <span className="text-accent font-medium text-sm tracking-wider uppercase">
                 Our Story
               </span>
-              <h1 className="text-4xl md:text-6xl font-bold mt-4 leading-tight">
+              <h1 className="mt-4 text-3xl font-bold leading-tight min-[360px]:text-4xl md:text-6xl">
                 Creating Memories,
                 <br />
                 <span className="text-gradient-accent">One Gift at a Time</span>
               </h1>
-              <p className="text-muted-foreground mt-6 text-lg max-w-2xl mx-auto">
-                At Giftoria, we believe that the best gifts are the ones that carry a piece of your heart. 
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg">
+                At The Design Hive, we believe that the best gifts are the ones that carry a piece of your heart. 
                 Our mission is to help you express love, gratitude, and celebration through beautifully 
                 personalized products.
               </p>
@@ -74,9 +74,9 @@ const About = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 bg-muted/30">
+        <section className="bg-muted/30 py-12 sm:py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-8 min-[360px]:gap-x-6 md:grid-cols-4 md:gap-8">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -89,7 +89,7 @@ const About = () => {
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/10 mb-4">
                     <stat.icon className="w-7 h-7 text-accent" />
                   </div>
-                  <div className="text-3xl md:text-4xl font-bold text-gradient-accent">{stat.value}</div>
+                  <div className="text-2xl font-bold text-gradient-accent min-[360px]:text-3xl md:text-4xl">{stat.value}</div>
                   <div className="text-sm text-muted-foreground mt-2">{stat.label}</div>
                 </motion.div>
               ))}
@@ -98,9 +98,9 @@ const About = () => {
         </section>
 
         {/* Story Section */}
-        <section className="py-20">
+        <section className="py-14 sm:py-20">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -109,12 +109,12 @@ const About = () => {
                 <span className="text-accent font-medium text-sm tracking-wider uppercase">
                   How It Started
                 </span>
-                <h2 className="text-3xl md:text-4xl font-bold mt-4">
+                <h2 className="mt-4 text-2xl font-bold min-[360px]:text-3xl md:text-4xl">
                   From a Simple Idea to Your Favorite Gift Shop
                 </h2>
                 <div className="mt-6 space-y-4 text-muted-foreground">
                   <p>
-                    Giftoria was born in 2020 from a simple observation: people wanted to give 
+                    The Design Hive was born in 2020 from a simple observation: people wanted to give 
                     meaningful, personalized gifts but didn't have an easy way to create them.
                   </p>
                   <p>
@@ -132,7 +132,7 @@ const About = () => {
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="relative"
+                className="relative mx-auto w-full max-w-xl pb-10 pl-0 min-[360px]:pb-12 min-[360px]:pl-6 sm:pb-14 sm:pl-8 lg:pb-8"
               >
                 <div className="aspect-square rounded-3xl overflow-hidden glass-card">
                   <img
@@ -141,11 +141,11 @@ const About = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-8 -left-8 w-48 h-48 rounded-2xl overflow-hidden glass-card border-4 border-background">
+                <div className="absolute bottom-0 left-0 w-[38%] min-w-[104px] max-w-48 overflow-hidden rounded-2xl border-4 border-background glass-card">
                   <img
                     src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400"
                     alt="Custom products"
-                    className="w-full h-full object-cover"
+                    className="aspect-square h-auto w-full object-cover"
                   />
                 </div>
               </motion.div>
@@ -154,13 +154,13 @@ const About = () => {
         </section>
 
         {/* Values Section */}
-        <section className="py-20 bg-muted/30">
+        <section className="bg-muted/30 py-14 sm:py-20">
           <div className="container mx-auto px-4 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="mb-10 text-center sm:mb-16"
             >
               <span className="text-accent font-medium text-sm tracking-wider uppercase">
                 What We Believe
@@ -168,7 +168,7 @@ const About = () => {
               <h2 className="text-3xl md:text-4xl font-bold mt-4">Our Core Values</h2>
             </motion.div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid gap-5 min-[420px]:grid-cols-2 sm:gap-8 lg:grid-cols-4">
               {values.map((value, index) => (
                 <motion.div
                   key={value.title}
@@ -176,7 +176,7 @@ const About = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="glass-card p-6 text-center hover:border-accent/50 transition-colors"
+                  className="glass-card p-5 text-center transition-colors hover:border-accent/50 sm:p-6"
                 >
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-gradient mb-4">
                     <value.icon className="w-7 h-7 text-accent-foreground" />
@@ -190,21 +190,21 @@ const About = () => {
         </section>
 
         {/* Team Section */}
-        <section className="py-20">
+        <section className="py-14 sm:py-20">
           <div className="container mx-auto px-4 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="mb-10 text-center sm:mb-16"
             >
               <span className="text-accent font-medium text-sm tracking-wider uppercase">
                 Meet The Team
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-4">The People Behind Giftoria</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mt-4">The People Behind The Design Hive</h2>
             </motion.div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="mx-auto grid max-w-4xl gap-5 min-[420px]:grid-cols-2 sm:gap-8 lg:grid-cols-3">
               {team.map((member, index) => (
                 <motion.div
                   key={member.name}
@@ -232,25 +232,25 @@ const About = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20">
+        <section className="py-14 sm:py-20">
           <div className="container mx-auto px-4 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="glass-card p-12 md:p-16 text-center bg-gradient-to-br from-accent/5 via-transparent to-primary/5"
+              className="glass-card bg-gradient-to-br from-accent/5 via-transparent to-primary/5 p-6 text-center min-[360px]:p-8 md:p-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <h2 className="mb-4 text-2xl font-bold min-[360px]:text-3xl md:text-4xl">
                 Ready to Create Something Special?
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto mb-8">
                 Start designing your personalized gift today and make someone's day unforgettable.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/shop" className="btn-luxury">
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+                <a href="/shop" className="btn-luxury inline-flex min-h-11 w-full items-center justify-center px-5 py-3 sm:w-auto sm:px-8 sm:py-4">
                   Shop Now
                 </a>
-                <a href="/customize" className="btn-luxury-outline">
+                <a href="/customize" className="btn-luxury-outline inline-flex min-h-11 w-full items-center justify-center px-5 py-3 sm:w-auto sm:px-8 sm:py-4">
                   Start Customizing
                 </a>
               </div>

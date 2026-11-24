@@ -119,16 +119,16 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="flex min-h-dvh min-h-dvh items-start justify-center overflow-x-clip bg-background px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] min-[360px]:px-4 sm:items-center sm:py-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        className="my-auto w-full min-w-0 max-w-md"
       >
-        <div className="glass-card p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold">
-              <span className="text-gradient-accent">Giftoria</span>
+        <div className="glass-card p-4 min-[360px]:p-6 sm:p-8">
+          <div className="mb-6 text-center sm:mb-8">
+            <h1 className="text-2xl font-bold min-[360px]:text-3xl">
+              <span className="text-gradient-accent">The Design Hive</span>
             </h1>
             <p className="text-muted-foreground mt-2">
               {isLogin ? "Welcome back!" : "Create your account"}
@@ -142,9 +142,9 @@ const Auth = () => {
             onClick={handleGoogleSignIn}
           />
 
-          <div className="relative my-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">or continue with email</span>
+          <div className="relative my-5 flex min-w-0 items-center gap-2 min-[360px]:my-6 min-[360px]:gap-4">
+            <div className="h-px min-w-0 flex-1 bg-border" />
+            <span className="shrink-0 text-[11px] text-muted-foreground min-[360px]:text-xs">or continue with email</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
@@ -197,9 +197,10 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff /> : <Eye />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
@@ -209,13 +210,13 @@ const Auth = () => {
             </Button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-muted-foreground">
+          <p className="mt-5 flex flex-wrap items-center justify-center gap-x-1 text-center text-sm text-muted-foreground min-[360px]:mt-6">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               disabled={busy}
-              className="text-accent font-medium disabled:opacity-50"
+              className="min-h-11 px-2 font-medium text-accent disabled:opacity-50"
             >
               {isLogin ? "Sign up" : "Sign in"}
             </button>
